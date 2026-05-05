@@ -515,6 +515,47 @@
             transform: scale(1.05);
         }
         
+        /* Credits */
+        #credits {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 50;
+            text-align: center;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.8);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            pointer-events: none;
+        }
+        
+        #credits a {
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            font-weight: 600;
+            pointer-events: all;
+            transition: color 0.2s;
+        }
+        
+        #credits a:hover {
+            color: #fff;
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            #credits {
+                font-size: 9px;
+                bottom: 8px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            #credits {
+                font-size: 8px;
+                bottom: 5px;
+            }
+        }
+        
         #level-display {
             position: absolute;
             top: 80px;
@@ -768,6 +809,12 @@
             <button class="sleep" onclick="sleepPet()">😴 Sleep</button>
             <button class="dance" onclick="dancePet()">💃 Dance</button>
         </div>
+    </div>
+    
+    <div id="credits">
+        Made with ❤️ by <a href="https://twitter.com/rdmnad" target="_blank">@rdmnad</a> | 
+        Discord: <a href="https://discord.com/users/therdm" target="_blank">@therdm</a> | 
+        Special for <a href="https://ritual.net" target="_blank">Ritual Community</a> 🔮
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
