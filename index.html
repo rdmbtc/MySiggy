@@ -4,7 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MySiggy - Play with your Siggy </title>
+    
+    <!-- Preconnect for faster font loading -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Preload critical assets -->
+    <link rel="preload" as="image" href="textures/e8ac44da4f2641a190a3b03367783ead_RGB_gltf_embedded_1.png">
+    <link rel="preload" as="fetch" href="animations/Happy Idle.fbx" crossorigin>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -1100,16 +1108,12 @@
         const interactiveAnims = ['boxing', 'boxing_1', 'hit_to_body_1', 'hit_to_body', 'kip_up'];
         let lastInteractionTime = 0;
 
-        // Priority animations - load first
+        // Priority animations - load first (reduced set)
         const priorityAnimations = [
             'Happy Idle.fbx',
             'Drinking.fbx',
             'Dancing.fbx',
-            'Laying Sleeping.fbx',
-            'Excited.fbx',
-            'Crying.fbx',
-            'Yawn.fbx',
-            'Sad Idle.fbx'
+            'Laying Sleeping.fbx'
         ];
         
         // All other animations - load in background
@@ -1147,13 +1151,16 @@
             camera.lookAt(0, 450, 0);
 
             renderer = new THREE.WebGLRenderer({ 
-                antialias: true, 
+                antialias: window.devicePixelRatio <= 1, // Only on low-DPI screens
                 alpha: true,
-                powerPreference: "high-performance" // Performance optimization
+                powerPreference: "high-performance",
+                stencil: false, // Disable stencil buffer
+                depth: true
             });
             renderer.setSize(container.clientWidth, container.clientHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit pixel ratio for performance
-            renderer.shadowMap.enabled = false; // Disable shadows for better performance
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // Lower for better performance
+            renderer.shadowMap.enabled = false;
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
             container.appendChild(renderer.domElement);
 
             // NO CONTROLS - fixed view only!
@@ -1189,9 +1196,15 @@
             const raycaster = new THREE.Raycaster();
             const mouse = new THREE.Vector2();
             
+            // Throttle raycasting for performance
+            let canInteract = true;
+            
             function onPointerDown(event) {
-                // Prevent interaction during animation
-                if (isAnimating) return;
+                // Prevent interaction during animation or throttle
+                if (isAnimating || !canInteract) return;
+                
+                canInteract = false;
+                setTimeout(() => canInteract = true, 100); // 100ms throttle
                 
                 // Calculate mouse position in normalized device coordinates
                 const rect = renderer.domElement.getBoundingClientRect();
@@ -1228,27 +1241,26 @@
             }
             
             // Add event listeners for both mouse and touch
-            renderer.domElement.addEventListener('pointerdown', onPointerDown);
+            renderer.domElement.addEventListener('pointerdown', onPointerDown, { passive: true });
         }
         
         function initAudio() {
-            // Background music
-            backgroundMusic = new Audio('sounds/background_music.mp3');
+            // Background music - lazy load
+            backgroundMusic = new Audio();
+            backgroundMusic.src = 'sounds/background_music.mp3';
             backgroundMusic.loop = true;
             backgroundMusic.volume = musicVolume;
+            backgroundMusic.preload = 'none'; // Don't preload
             
-            // Load sound effects
-            sounds.meow1 = new Audio('sounds/moeeza3-kitten-cat-meow-437244.mp3');
-            sounds.meow2 = new Audio('sounds/scottishperson-sound-effect-cat-chirruping-and-meowing-282902.mp3');
-            sounds.meow3 = new Audio('sounds/sound_garage-cat-meow-8-fx-306184.mp3');
-            sounds.cute = new Audio('sounds/stu9-cute-cat-352656.mp3');
-            sounds.purr = new Audio('sounds/universfield-purring-cat-156459.mp3');
-            sounds.button = new Audio('sounds/soundreality-button-202966.mp3');
-            
-            // Set volume for all sounds
-            Object.values(sounds).forEach(sound => {
-                sound.volume = sfxVolume;
-            });
+            // Load sound effects on demand
+            sounds = {
+                meow1: null,
+                meow2: null,
+                meow3: null,
+                cute: null,
+                purr: null,
+                button: null
+            };
             
             // Start music on first user interaction
             document.addEventListener('click', () => {
@@ -1258,7 +1270,26 @@
             }, { once: true });
         }
         
+        // Lazy load sounds on first use
+        function loadSound(soundName) {
+            const soundMap = {
+                meow1: 'sounds/moeeza3-kitten-cat-meow-437244.mp3',
+                meow2: 'sounds/scottishperson-sound-effect-cat-chirruping-and-meowing-282902.mp3',
+                meow3: 'sounds/sound_garage-cat-meow-8-fx-306184.mp3',
+                cute: 'sounds/stu9-cute-cat-352656.mp3',
+                purr: 'sounds/universfield-purring-cat-156459.mp3',
+                button: 'sounds/soundreality-button-202966.mp3'
+            };
+            
+            if (!sounds[soundName] && soundMap[soundName]) {
+                sounds[soundName] = new Audio(soundMap[soundName]);
+                sounds[soundName].volume = sfxVolume;
+                sounds[soundName].preload = 'auto';
+            }
+        }
+        
         function playSound(soundName) {
+            loadSound(soundName); // Lazy load if not loaded
             if (sounds[soundName]) {
                 sounds[soundName].currentTime = 0;
                 sounds[soundName].play().catch(e => console.log('Sound play failed'));
@@ -1284,6 +1315,8 @@
             textureLoader.load('textures/e8ac44da4f2641a190a3b03367783ead_RGB_gltf_embedded_1.png', 
                 (texture) => {
                     loadedTexture = texture;
+                    texture.minFilter = THREE.LinearFilter; // Faster filtering
+                    texture.generateMipmaps = false; // Skip mipmaps for performance
                     textureReady = true;
                     console.log('✅ Texture loaded successfully');
                     if (characterReady) applyTexture();
@@ -1303,17 +1336,24 @@
                             child.material = new THREE.MeshStandardMaterial({
                                 map: loadedTexture,
                                 roughness: 0.8,
-                                metalness: 0.2
+                                metalness: 0.2,
+                                flatShading: false
                             });
                         } else {
                             // Fallback material if texture fails
                             child.material = new THREE.MeshStandardMaterial({
                                 color: 0x8B4513, // Brown color for cat
                                 roughness: 0.8,
-                                metalness: 0.2
+                                metalness: 0.2,
+                                flatShading: false
                             });
                         }
-                        child.castShadow = false; // Disable shadows
+                        child.castShadow = false;
+                        child.receiveShadow = false;
+                        // Optimize geometry
+                        if (child.geometry) {
+                            child.geometry.computeVertexNormals();
+                        }
                     }
                 });
             }
@@ -1322,8 +1362,19 @@
                 character = fbx;
                 
                 // Scale - ENORMOUS!
-                const scaleFactor = 150; // Even bigger!
+                const scaleFactor = 150;
                 character.scale.set(scaleFactor, scaleFactor, scaleFactor);
+                
+                // Optimize character geometry
+                character.traverse((child) => {
+                    if (child.isMesh && child.geometry) {
+                        // Merge vertices for better performance
+                        child.geometry.computeBoundingSphere();
+                        child.geometry.computeBoundingBox();
+                        // Disable frustum culling for main character
+                        child.frustumCulled = false;
+                    }
+                });
                 
                 // Position - adjusted height!
                 const box = new THREE.Box3().setFromObject(character);
@@ -1387,28 +1438,47 @@
         }
         
         function loadBackgroundAnimations() {
-            const loader = new FBXLoader();
-            let loaded = 0;
-            
-            backgroundAnimations.forEach((file) => {
-                const name = file.replace('.fbx', '').toLowerCase().replace(/\s+/g, '_').replace(/[(),]/g, '');
+            // Delay background loading to prioritize initial render
+            setTimeout(() => {
+                const loader = new FBXLoader();
+                let loaded = 0;
+                let batchIndex = 0;
+                const batchSize = 3; // Load 3 at a time
                 
-                loader.load('animations/' + file, (fbx) => {
-                    if (fbx.animations && fbx.animations.length > 0) {
-                        const clip = fbx.animations[0];
-                        const action = mixer.clipAction(clip);
-                        action.setLoop(THREE.LoopRepeat);
-                        animations[name] = action;
+                function loadBatch() {
+                    const start = batchIndex * batchSize;
+                    const end = Math.min(start + batchSize, backgroundAnimations.length);
+                    
+                    if (start >= backgroundAnimations.length) return;
+                    
+                    for (let i = start; i < end; i++) {
+                        const file = backgroundAnimations[i];
+                        const name = file.replace('.fbx', '').toLowerCase().replace(/\s+/g, '_').replace(/[(),]/g, '');
                         
-                        loaded++;
-                        if (loaded % 10 === 0) {
-                            console.log(`Background loading: ${loaded}/${backgroundAnimations.length}`);
-                        }
+                        loader.load('animations/' + file, (fbx) => {
+                            if (fbx.animations && fbx.animations.length > 0) {
+                                const clip = fbx.animations[0];
+                                const action = mixer.clipAction(clip);
+                                action.setLoop(THREE.LoopRepeat);
+                                animations[name] = action;
+                                
+                                loaded++;
+                                if (loaded % 5 === 0) {
+                                    console.log(`Background loading: ${loaded}/${backgroundAnimations.length}`);
+                                }
+                            }
+                        }, undefined, () => {
+                            loaded++;
+                        });
                     }
-                }, undefined, () => {
-                    loaded++;
-                });
-            });
+                    
+                    batchIndex++;
+                    // Load next batch after delay
+                    setTimeout(loadBatch, 500);
+                }
+                
+                loadBatch();
+            }, 2000); // Wait 2 seconds before starting background load
         }
 
         function playAnimation(name, duration = 0) {
@@ -1450,8 +1520,17 @@
         }
 
         const clock = new THREE.Clock();
-        function animate() {
+        let lastFrameTime = 0;
+        const targetFPS = 60;
+        const frameInterval = 1000 / targetFPS;
+        
+        function animate(currentTime) {
             requestAnimationFrame(animate);
+            
+            // Throttle to target FPS
+            const elapsed = currentTime - lastFrameTime;
+            if (elapsed < frameInterval) return;
+            lastFrameTime = currentTime - (elapsed % frameInterval);
             
             const delta = clock.getDelta();
             if (mixer) mixer.update(delta);
@@ -1459,26 +1538,46 @@
             renderer.render(scene, camera);
         }
 
+        // Debounced resize handler for better performance
+        let resizeTimeout;
         function onResize() {
-            const container = document.getElementById('canvas-container');
-            camera.aspect = container.clientWidth / container.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                const container = document.getElementById('canvas-container');
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            }, 150); // Debounce 150ms
         }
 
+        // Cache DOM elements for better performance
+        let cachedElements = null;
+        
         function updateUI() {
-            const hungerEl = document.getElementById('hunger');
-            const happinessEl = document.getElementById('happiness');
-            const energyEl = document.getElementById('energy');
+            // Cache elements on first call
+            if (!cachedElements) {
+                cachedElements = {
+                    hunger: document.getElementById('hunger'),
+                    happiness: document.getElementById('happiness'),
+                    energy: document.getElementById('energy')
+                };
+            }
             
-            hungerEl.style.width = stats.hunger + '%';
-            hungerEl.textContent = Math.round(stats.hunger) + '%';
+            const hungerVal = Math.round(stats.hunger);
+            const happinessVal = Math.round(stats.happiness);
+            const energyVal = Math.round(stats.energy);
             
-            happinessEl.style.width = stats.happiness + '%';
-            happinessEl.textContent = Math.round(stats.happiness) + '%';
-            
-            energyEl.style.width = stats.energy + '%';
-            energyEl.textContent = Math.round(stats.energy) + '%';
+            // Batch DOM updates
+            requestAnimationFrame(() => {
+                cachedElements.hunger.style.width = hungerVal + '%';
+                cachedElements.hunger.textContent = hungerVal + '%';
+                
+                cachedElements.happiness.style.width = happinessVal + '%';
+                cachedElements.happiness.textContent = happinessVal + '%';
+                
+                cachedElements.energy.style.width = energyVal + '%';
+                cachedElements.energy.textContent = energyVal + '%';
+            });
         }
 
         function showMessage(text) {
@@ -1489,24 +1588,32 @@
         }
 
         function startGame() {
+            let lastUpdate = Date.now();
+            
             gameInterval = setInterval(() => {
+                const now = Date.now();
+                const deltaTime = (now - lastUpdate) / 1000; // seconds
+                lastUpdate = now;
+                
                 // Slower stat decrease
-                stats.hunger = Math.max(0, stats.hunger - 0.15); // Was 0.5
-                stats.happiness = Math.max(0, stats.happiness - 0.1); // Was 0.3
-                stats.energy = Math.max(0, stats.energy - 0.08); // Was 0.2
+                stats.hunger = Math.max(0, stats.hunger - (0.15 * deltaTime));
+                stats.happiness = Math.max(0, stats.happiness - (0.1 * deltaTime));
+                stats.energy = Math.max(0, stats.energy - (0.08 * deltaTime));
                 updateUI();
                 
-                // Auto animations based on stats
-                if (stats.hunger < 20 && animations.crying && !isAnimating) {
-                    playAnimation('crying', 3000);
-                } else if (stats.energy < 15 && animations.yawn && !isAnimating) {
-                    playAnimation('yawn', 2000);
-                } else if (stats.happiness < 20 && animations.sad_idle && !isAnimating) {
-                    playAnimation('sad_idle', 3000);
-                } else if (stats.happiness > 90 && Math.random() > 0.98 && animations.excited && !isAnimating) {
-                    playAnimation('excited', 3000);
+                // Auto animations based on stats (throttled)
+                if (Math.random() > 0.7) { // Only 30% chance to trigger
+                    if (stats.hunger < 20 && animations.crying && !isAnimating) {
+                        playAnimation('crying', 3000);
+                    } else if (stats.energy < 15 && animations.yawn && !isAnimating) {
+                        playAnimation('yawn', 2000);
+                    } else if (stats.happiness < 20 && animations.sad_idle && !isAnimating) {
+                        playAnimation('sad_idle', 3000);
+                    } else if (stats.happiness > 90 && animations.excited && !isAnimating) {
+                        playAnimation('excited', 3000);
+                    }
                 }
-            }, 3000); // Slower interval: 3 seconds instead of 2
+            }, 3000);
         }
 
         window.feedPet = () => {
