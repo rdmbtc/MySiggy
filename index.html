@@ -705,6 +705,165 @@
             font-size: 64px;
             margin-bottom: 20px;
         }
+        
+        /* Twitter Share Modal */
+        #twitter-share-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10003;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        
+        #twitter-share-modal.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .twitter-share-content {
+            background: white;
+            padding: 50px 40px;
+            border-radius: 25px;
+            max-width: 450px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            animation: slideUp 0.4s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .twitter-share-content .celebration-emoji {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: bounce 0.6s ease-in-out;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .twitter-share-content h2 {
+            font-size: 32px;
+            margin-bottom: 15px;
+            color: #495057;
+            font-weight: 700;
+        }
+        
+        .twitter-share-content p {
+            font-size: 18px;
+            color: #6c757d;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .twitter-share-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #1DA1F2 0%, #0d8bd9 100%);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 6px 24px rgba(29, 161, 242, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .twitter-share-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 32px rgba(29, 161, 242, 0.6);
+        }
+        
+        .twitter-share-btn:active {
+            transform: translateY(-1px);
+        }
+        
+        .close-share-btn {
+            width: 100%;
+            padding: 15px;
+            background: transparent;
+            color: #6c757d;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: color 0.2s;
+            font-family: 'Poppins', sans-serif;
+            box-shadow: none !important;
+        }
+        
+        .close-share-btn:hover {
+            color: #495057;
+            transform: none !important;
+        }
+        
+        @media (max-width: 768px) {
+            .twitter-share-content {
+                padding: 40px 30px;
+            }
+            
+            .twitter-share-content .celebration-emoji {
+                font-size: 64px;
+            }
+            
+            .twitter-share-content h2 {
+                font-size: 26px;
+            }
+            
+            .twitter-share-content p {
+                font-size: 16px;
+            }
+            
+            .twitter-share-btn {
+                font-size: 16px;
+                padding: 16px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .twitter-share-content {
+                padding: 35px 25px;
+            }
+            
+            .twitter-share-content .celebration-emoji {
+                font-size: 56px;
+            }
+            
+            .twitter-share-content h2 {
+                font-size: 24px;
+            }
+            
+            .twitter-share-content p {
+                font-size: 15px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -779,6 +938,22 @@
             <input type="text" id="name-input" placeholder="Enter your pet's name..." style="display:none;">
             <button onclick="nextTutorial()">Next</button>
             <button class="tutorial-skip" onclick="skipTutorial()">Skip Tutorial</button>
+        </div>
+    </div>
+    
+    <!-- Twitter Share Modal -->
+    <div id="twitter-share-modal">
+        <div class="twitter-share-content">
+            <div class="celebration-emoji">🎉</div>
+            <h2>Congratulations!</h2>
+            <p>You minted your pet <strong id="minted-pet-name"></strong>! Share your achievement on X!</p>
+            <button class="twitter-share-btn" onclick="shareOnTwitter()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+                Share on X
+            </button>
+            <button class="close-share-btn" onclick="closeTwitterModal()">Maybe Later</button>
         </div>
     </div>
     
@@ -1729,6 +1904,9 @@
                 
                 console.log('Mint TX:', receipt.transactionHash);
                 
+                // Show Twitter share modal
+                showTwitterShareModal(name);
+                
             } catch (error) {
                 console.error('Mint error:', error);
                 if (error.code === 4001 || error.code === 'ACTION_REJECTED') {
@@ -1809,6 +1987,32 @@
                     showMessage('❌ Sync failed. Check console.');
                 }
             }
+        };
+        
+        function showTwitterShareModal(petName) {
+            document.getElementById('minted-pet-name').textContent = petName;
+            document.getElementById('twitter-share-modal').classList.add('show');
+        }
+        
+        window.closeTwitterModal = () => {
+            playSound('button');
+            document.getElementById('twitter-share-modal').classList.remove('show');
+        };
+        
+        window.shareOnTwitter = () => {
+            playSound('button');
+            
+            const petName = document.getElementById('minted-pet-name').textContent;
+            const tweetText = `Just minted my Siggy ${petName}! 🐾✨\n\nThis is so cool! Thanks @rdmnad for building this 🔥`;
+            const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+            
+            // Open Twitter in new window
+            window.open(tweetUrl, '_blank', 'width=550,height=420');
+            
+            // Close modal after sharing
+            setTimeout(() => {
+                closeTwitterModal();
+            }, 500);
         };
         
         window.loadProgress = async () => {
