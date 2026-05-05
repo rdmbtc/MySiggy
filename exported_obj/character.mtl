@@ -1,0 +1,10 @@
+# Material file for character
+newmtl CharacterMaterial
+Ka 1.0 1.0 1.0
+Kd 1.0 1.0 1.0
+Ks 0.3 0.3 0.3
+Ns 10.0
+d 1.0
+illum 2
+map_Kd textures/e8ac44da4f2641a190a3b03367783ead_RGB_gltf_embedded_1.png
+map_Bump textures/b8f21768cc7b42c5b27adb3c1e2bcf37_N_gltf_embedded_3.png

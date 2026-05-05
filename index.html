@@ -1,0 +1,1836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MySiggy - Play with your Siggy </title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #FF4E50;
+            background-image: 
+                linear-gradient(to right, rgba(249, 212, 35, 0.7), rgba(255, 78, 80, 0.7)),
+                url('images/bg.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        #canvas-container { 
+            width: 100%; 
+            height: 100vh;
+            background: transparent;
+            cursor: pointer;
+        }
+        
+        canvas { 
+            display: block; 
+            width: 100%; 
+            height: 100%; 
+        }
+        
+        #ui {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            width: 90%;
+            max-width: 600px;
+        }
+        
+        #stats {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+            backdrop-filter: blur(10px);
+        }
+        
+        .stat {
+            flex: 1;
+            text-align: center;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 6px;
+            letter-spacing: 0.3px;
+        }
+        
+        .stat-bar {
+            width: 100%;
+            height: 22px;
+            background: #e9ecef;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.08);
+            border: 2px solid #dee2e6;
+        }
+        
+        .stat-fill {
+            height: 100%;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 11px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        
+        .hunger { 
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+        }
+        .happiness { 
+            background: linear-gradient(135deg, #ffd93d 0%, #ffb800 100%);
+        }
+        .energy { 
+            background: linear-gradient(135deg, #51cf66 0%, #37b24d 100%);
+        }
+        
+        #actions {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        
+        button {
+            padding: 16px 12px;
+            border: none;
+            border-radius: 18px;
+            color: white;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.2);
+            font-family: 'Poppins', sans-serif;
+            letter-spacing: 0.3px;
+            backdrop-filter: blur(10px);
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        
+        button:active {
+            transform: translateY(-1px);
+        }
+        
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            #ui {
+                width: 95%;
+                bottom: 15px;
+            }
+            
+            #stats {
+                padding: 10px;
+                gap: 8px;
+                margin-bottom: 12px;
+            }
+            
+            .stat-label {
+                font-size: 10px;
+                margin-bottom: 4px;
+            }
+            
+            .stat-bar {
+                height: 18px;
+            }
+            
+            .stat-fill {
+                font-size: 9px;
+            }
+            
+            #actions {
+                gap: 8px;
+            }
+            
+            button {
+                padding: 12px 8px;
+                font-size: 11px;
+                border-radius: 12px;
+            }
+            
+            #pet-name {
+                font-size: 16px;
+                padding: 10px 16px;
+                top: 15px;
+                left: 15px;
+            }
+            
+            #level-display {
+                font-size: 14px;
+                padding: 8px 16px;
+                top: 60px;
+                left: 15px;
+            }
+            
+            #xp-bar {
+                width: 120px;
+                height: 6px;
+            }
+            
+            #wallet {
+                top: 15px;
+                right: 15px;
+                gap: 8px;
+            }
+            
+            #wallet button {
+                padding: 8px 12px;
+                font-size: 11px;
+            }
+            
+            #settings-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+            
+            .tutorial-content {
+                padding: 30px 20px;
+                max-width: 90%;
+            }
+            
+            .tutorial-content h2 {
+                font-size: 22px;
+            }
+            
+            .tutorial-content p {
+                font-size: 14px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            #ui {
+                width: 98%;
+                bottom: 10px;
+            }
+            
+            #stats {
+                padding: 8px;
+                gap: 6px;
+                margin-bottom: 10px;
+            }
+            
+            .stat-label {
+                font-size: 9px;
+                margin-bottom: 3px;
+            }
+            
+            .stat-bar {
+                height: 16px;
+            }
+            
+            .stat-fill {
+                font-size: 8px;
+            }
+            
+            #actions {
+                gap: 6px;
+            }
+            
+            button {
+                padding: 10px 6px;
+                font-size: 10px;
+            }
+            
+            #pet-name {
+                font-size: 14px;
+                padding: 8px 12px;
+                top: 10px;
+                left: 10px;
+            }
+            
+            #level-display {
+                font-size: 12px;
+                padding: 6px 12px;
+                top: 50px;
+                left: 10px;
+            }
+            
+            #xp-bar {
+                width: 100px;
+                height: 5px;
+            }
+            
+            #wallet {
+                top: 10px;
+                right: 10px;
+                gap: 6px;
+            }
+            
+            #wallet button {
+                padding: 6px 10px;
+                font-size: 10px;
+            }
+            
+            #settings-btn {
+                width: 36px;
+                height: 36px;
+                font-size: 16px;
+            }
+            
+            .tutorial-content {
+                padding: 25px 15px;
+            }
+            
+            .tutorial-content h2 {
+                font-size: 20px;
+            }
+            
+            .tutorial-content p {
+                font-size: 13px;
+            }
+            
+            .tutorial-emoji {
+                font-size: 48px;
+            }
+        }
+        
+        .feed { 
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+        }
+        .play { 
+            background: linear-gradient(135deg, #ffd93d 0%, #ffb800 100%);
+        }
+        .sleep { 
+            background: linear-gradient(135deg, #51cf66 0%, #37b24d 100%);
+        }
+        .dance { 
+            background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+        }
+        
+        #loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            transition: opacity 0.5s, visibility 0.5s;
+        }
+        
+        #loading.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        
+        .loading-content {
+            text-align: center;
+            color: white;
+        }
+        
+        .spinner {
+            border: 6px solid rgba(255,255,255,0.2);
+            border-top: 6px solid white;
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 30px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+        
+        .loading-progress {
+            font-size: 16px;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+        
+        #wallet {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            z-index: 100;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        #wallet button {
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-size: 15px;
+            border-radius: 15px;
+            white-space: nowrap;
+        }
+        
+        #settings-btn {
+            width: 50px;
+            height: 50px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            border-radius: 50%;
+        }
+        
+        /* Settings Modal */
+        #settings-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10002;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        
+        #settings-modal.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .settings-content {
+            background: white;
+            padding: 40px;
+            border-radius: 25px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .settings-content h2 {
+            font-size: 28px;
+            margin-bottom: 30px;
+            color: #495057;
+            text-align: center;
+        }
+        
+        .volume-control {
+            margin-bottom: 25px;
+        }
+        
+        .volume-control label {
+            display: block;
+            font-size: 16px;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 10px;
+        }
+        
+        .volume-slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #e9ecef;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+        }
+        
+        .volume-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            border: none;
+        }
+        
+        .volume-value {
+            display: inline-block;
+            margin-left: 10px;
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .settings-content button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        #pet-name {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            background: white;
+            padding: 14px 28px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            font-size: 22px;
+            font-weight: 700;
+            color: #495057;
+            z-index: 100;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        #pet-name:hover {
+            transform: scale(1.05);
+        }
+        
+        #level-display {
+            position: absolute;
+            top: 80px;
+            left: 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            font-size: 16px;
+            font-weight: 700;
+            z-index: 100;
+        }
+        
+        #xp-bar {
+            width: 150px;
+            height: 8px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 10px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        
+        #xp-fill {
+            height: 100%;
+            background: white;
+            border-radius: 10px;
+            transition: width 0.5s;
+            width: 0%;
+        }
+        
+        #status-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.85);
+            color: white;
+            padding: 25px 50px;
+            border-radius: 20px;
+            font-size: 24px;
+            font-weight: 700;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 1000;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        
+        #status-message.show {
+            opacity: 1;
+        }
+        
+        /* Tutorial Modal */
+        #tutorial-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10001;
+            opacity: 1;
+            transition: opacity 0.3s;
+        }
+        
+        #tutorial-modal.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .tutorial-content {
+            background: white;
+            padding: 40px;
+            border-radius: 25px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .tutorial-content h2 {
+            font-size: 28px;
+            margin-bottom: 20px;
+            color: #495057;
+        }
+        
+        .tutorial-content p {
+            font-size: 16px;
+            color: #6c757d;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+        
+        .tutorial-content input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 12px;
+            font-size: 16px;
+            font-family: 'Poppins', sans-serif;
+            margin-bottom: 20px;
+            transition: border-color 0.3s;
+        }
+        
+        .tutorial-content input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .tutorial-content button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .tutorial-content button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .tutorial-skip {
+            background: transparent !important;
+            color: #6c757d !important;
+            box-shadow: none !important;
+            text-decoration: underline;
+            font-size: 14px;
+            padding: 10px;
+            margin-top: 5px;
+        }
+        
+        .tutorial-skip:hover {
+            color: #495057 !important;
+            transform: none !important;
+        }
+        
+        .tutorial-emoji {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <div class="loading-text">Loading Your Pet...</div>
+            <div class="loading-progress" id="loading-progress">Preparing character...</div>
+        </div>
+    </div>
+    
+    <div id="canvas-container"></div>
+    
+    <div id="pet-name" onclick="changeName()">🐾 My Pet</div>
+    
+    <div id="level-display">
+        <div>⭐ Level <span id="level">1</span></div>
+        <div id="xp-bar">
+            <div id="xp-fill"></div>
+        </div>
+    </div>
+    
+    <div id="wallet">
+        <button id="settings-btn" onclick="toggleSettings()">⚙️</button>
+        <button id="connect-wallet-btn" onclick="connectWallet()">🦊 Connect Wallet</button>
+    </div>
+    
+    <div id="status-message"></div>
+    
+    <!-- Settings Modal -->
+    <div id="settings-modal">
+        <div class="settings-content">
+            <h2>⚙️ Settings</h2>
+            
+            <!-- Web3 Section -->
+            <div id="web3-section" style="display:none; margin-bottom: 25px; padding-bottom: 25px; border-bottom: 2px solid #e9ecef;">
+                <h3 style="font-size: 18px; color: #495057; margin-bottom: 15px;">🔗 Blockchain</h3>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <button id="mint-btn-settings" onclick="mintPet()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #F9D423 0%, #FF4E50 100%);">🎨 Mint Pet</button>
+                    <button id="sync-btn-settings" onclick="syncPet()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #51cf66 0%, #37b24d 100%);">💾 Sync Progress</button>
+                    <button id="load-btn-settings" onclick="loadProgress()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #4dabf7 0%, #1c7ed6 100%);">📥 Load Progress</button>
+                </div>
+            </div>
+            
+            <!-- Audio Section -->
+            <div class="volume-control">
+                <label>
+                    🎵 Background Music
+                    <span class="volume-value" id="music-value">50%</span>
+                </label>
+                <input type="range" min="0" max="100" value="50" class="volume-slider" id="music-volume" oninput="updateMusicVolume(this.value)">
+            </div>
+            
+            <div class="volume-control">
+                <label>
+                    🔊 Sound Effects
+                    <span class="volume-value" id="sfx-value">70%</span>
+                </label>
+                <input type="range" min="0" max="100" value="70" class="volume-slider" id="sfx-volume" oninput="updateSFXVolume(this.value)">
+            </div>
+            
+            <button onclick="toggleSettings()">Close</button>
+        </div>
+    </div>
+    
+    <!-- Tutorial Modal -->
+    <div id="tutorial-modal">
+        <div class="tutorial-content">
+            <div class="tutorial-emoji" id="tutorial-emoji">👋</div>
+            <h2 id="tutorial-title">Welcome!</h2>
+            <p id="tutorial-text">Let's get started with your virtual pet!</p>
+            <input type="text" id="name-input" placeholder="Enter your pet's name..." style="display:none;">
+            <button onclick="nextTutorial()">Next</button>
+            <button class="tutorial-skip" onclick="skipTutorial()">Skip Tutorial</button>
+        </div>
+    </div>
+    
+    <div id="ui">
+        <div id="stats">
+            <div class="stat">
+                <div class="stat-label">🍔 HUNGER</div>
+                <div class="stat-bar">
+                    <div class="stat-fill hunger" id="hunger" style="width: 70%">70%</div>
+                </div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">😊 HAPPINESS</div>
+                <div class="stat-bar">
+                    <div class="stat-fill happiness" id="happiness" style="width: 80%">80%</div>
+                </div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">⚡ ENERGY</div>
+                <div class="stat-bar">
+                    <div class="stat-fill energy" id="energy" style="width: 60%">60%</div>
+                </div>
+            </div>
+        </div>
+        <div id="actions">
+            <button class="feed" onclick="feedPet()">🍔 Feed</button>
+            <button class="play" onclick="playWithPet()">🎮 Play</button>
+            <button class="sleep" onclick="sleepPet()">😴 Sleep</button>
+            <button class="dance" onclick="dancePet()">💃 Dance</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+
+        let scene, camera, renderer, character, mixer;
+        let animations = {};
+        let currentAction = null;
+        let stats = { hunger: 70, happiness: 80, energy: 60 };
+        let gameInterval = null;
+        let playerLevel = 1;
+        let playerXP = 0;
+        let playerName = '';
+        let tutorialStep = 0;
+        let isAnimating = false; // Animation lock
+        
+        // Audio system
+        let backgroundMusic;
+        let sounds = {};
+        let musicVolume = 0.5;
+        let sfxVolume = 0.7;
+        
+        // Web3 system
+        let provider;
+        let signer;
+        let userAccount = null;
+        let contract = null;
+        const RITUAL_CHAIN_ID = '0x7BB'; // 1979 in hex
+        const RITUAL_CONFIG = {
+            chainId: RITUAL_CHAIN_ID,
+            chainName: 'Ritual Testnet',
+            nativeCurrency: {
+                name: 'RITUAL',
+                symbol: 'RITUAL',
+                decimals: 18
+            },
+            rpcUrls: ['https://rpc.ritualfoundation.org'],
+            blockExplorerUrls: ['https://explorer.ritualfoundation.org']
+        };
+        
+        // Contract configuration - DEPLOYED! ✅
+        const CONTRACT_ADDRESS = '0x1af2673041db41476591aD459e6FB29db46b7BdA'; // Deployed on Ritual Testnet
+        const CONTRACT_ABI = [
+            {
+                "inputs": [{"internalType": "string","name": "_name","type": "string"}],
+                "name": "mintPet",
+                "outputs": [],
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {"internalType": "uint256","name": "_hunger","type": "uint256"},
+                    {"internalType": "uint256","name": "_happiness","type": "uint256"},
+                    {"internalType": "uint256","name": "_energy","type": "uint256"},
+                    {"internalType": "uint256","name": "_level","type": "uint256"},
+                    {"internalType": "uint256","name": "_experience","type": "uint256"}
+                ],
+                "name": "syncPet",
+                "outputs": [],
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
+                "inputs": [{"internalType": "address","name": "petOwner","type": "address"}],
+                "name": "getPetStats",
+                "outputs": [
+                    {"internalType": "string","name": "name","type": "string"},
+                    {"internalType": "uint256","name": "hunger","type": "uint256"},
+                    {"internalType": "uint256","name": "happiness","type": "uint256"},
+                    {"internalType": "uint256","name": "energy","type": "uint256"},
+                    {"internalType": "uint256","name": "level","type": "uint256"},
+                    {"internalType": "uint256","name": "experience","type": "uint256"},
+                    {"internalType": "uint256","name": "lastUpdate","type": "uint256"}
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [{"internalType": "address","name": "petOwner","type": "address"}],
+                "name": "hasPet",
+                "outputs": [{"internalType": "bool","name": "","type": "bool"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [{"internalType": "string","name": "_name","type": "string"}],
+                "name": "isNameAvailable",
+                "outputs": [{"internalType": "bool","name": "","type": "bool"}],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
+        
+        // Interactive animations
+        const interactiveAnims = ['boxing', 'boxing_1', 'hit_to_body_1', 'hit_to_body', 'kip_up'];
+        let lastInteractionTime = 0;
+
+        // Priority animations - load first
+        const priorityAnimations = [
+            'Happy Idle.fbx',
+            'Drinking.fbx',
+            'Dancing.fbx',
+            'Laying Sleeping.fbx',
+            'Excited.fbx',
+            'Crying.fbx',
+            'Yawn.fbx',
+            'Sad Idle.fbx'
+        ];
+        
+        // All other animations - load in background
+        const backgroundAnimations = [
+            'Angry.fbx', 'Body Block.fbx', 'Boxing (1).fbx', 'Boxing.fbx',
+            'Breathing Idle.fbx', 'Dancing Maraschino Step.fbx',
+            'Dancing Running Man.fbx', 'Dancing Twerk.fbx',
+            'Falling Down.fbx', 'Falling Into Pool.fbx',
+            'Falling To Landing.fbx', 'Falling.fbx', 'Getting Up.fbx',
+            'Having A Meeting, Female.fbx', 'Hit To Body (1).fbx', 'Hit To Body.fbx',
+            'Jogging.fbx', 'Kip Up.fbx', 'Laughing.fbx',
+            'Look Around.fbx', 'No.fbx', 'Northern Soul Dance.fbx',
+            'Northern Soul Floor Combo.fbx', 'Northern Soul Floor Spin.fbx',
+            'Pointing.fbx', 'Running.fbx', 'Shaking Head No.fbx',
+            'Shaking It Off.fbx', 'Silly Dancing (1).fbx', 'Silly Dancing.fbx',
+            'Sitting Idle.fbx', 'Sitting Talking.fbx', 'Sleeping Idle (1).fbx',
+            'Sleeping Idle.fbx', 'Standing Clap.fbx', 'Standing Thumbs Up.fbx',
+            'Surprised.fbx', 'Talking (1).fbx', 'Talking.fbx', 'Thoughtful Head Shake.fbx',
+            'Victory Idle.fbx', 'Victory.fbx', 'Waving.fbx'
+        ];
+
+        function updateLoadingProgress(text) {
+            document.getElementById('loading-progress').textContent = text;
+        }
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = null; // Transparent to show gradient
+
+            const container = document.getElementById('canvas-container');
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 5000);
+            
+            // FIXED CAMERA - much closer to fill screen!
+            camera.position.set(0, 450, 650);
+            camera.lookAt(0, 450, 0);
+
+            renderer = new THREE.WebGLRenderer({ 
+                antialias: true, 
+                alpha: true,
+                powerPreference: "high-performance" // Performance optimization
+            });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit pixel ratio for performance
+            renderer.shadowMap.enabled = false; // Disable shadows for better performance
+            container.appendChild(renderer.domElement);
+
+            // NO CONTROLS - fixed view only!
+
+            // Lights - optimized
+            const ambient = new THREE.AmbientLight(0xffffff, 0.9);
+            scene.add(ambient);
+
+            const light = new THREE.DirectionalLight(0xffffff, 0.5);
+            light.position.set(100, 200, 100);
+            scene.add(light);
+
+            // Add shadow plane under character
+            const shadowGeometry = new THREE.CircleGeometry(80, 32);
+            const shadowMaterial = new THREE.MeshBasicMaterial({
+                color: 0x000000,
+                transparent: true,
+                opacity: 0.3
+            });
+            const shadow = new THREE.Mesh(shadowGeometry, shadowMaterial);
+            shadow.rotation.x = -Math.PI / 2;
+            shadow.position.y = 1; // Just above ground
+            scene.add(shadow);
+
+            window.addEventListener('resize', onResize);
+            animate();
+            initAudio();
+            setupInteraction();
+            loadCharacter();
+        }
+        
+        function setupInteraction() {
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+            
+            function onPointerDown(event) {
+                // Prevent interaction during animation
+                if (isAnimating) return;
+                
+                // Calculate mouse position in normalized device coordinates
+                const rect = renderer.domElement.getBoundingClientRect();
+                mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+                mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+                
+                // Update the picking ray with the camera and mouse position
+                raycaster.setFromCamera(mouse, camera);
+                
+                // Check if character is clicked
+                if (character) {
+                    const intersects = raycaster.intersectObject(character, true);
+                    
+                    if (intersects.length > 0) {
+                        // Throttle interactions (max once per 2 seconds)
+                        const now = Date.now();
+                        if (now - lastInteractionTime < 2000) return;
+                        lastInteractionTime = now;
+                        
+                        // Play random interactive animation
+                        const randomAnim = interactiveAnims[Math.floor(Math.random() * interactiveAnims.length)];
+                        
+                        if (animations[randomAnim]) {
+                            playSound('button');
+                            playRandomMeow();
+                            playAnimation(randomAnim, 2500);
+                            
+                            // Add small XP reward
+                            addXP(5);
+                            showMessage('👊 Ouch! +5 XP');
+                        }
+                    }
+                }
+            }
+            
+            // Add event listeners for both mouse and touch
+            renderer.domElement.addEventListener('pointerdown', onPointerDown);
+        }
+        
+        function initAudio() {
+            // Background music
+            backgroundMusic = new Audio('sounds/background_music.mp3');
+            backgroundMusic.loop = true;
+            backgroundMusic.volume = musicVolume;
+            
+            // Load sound effects
+            sounds.meow1 = new Audio('sounds/moeeza3-kitten-cat-meow-437244.mp3');
+            sounds.meow2 = new Audio('sounds/scottishperson-sound-effect-cat-chirruping-and-meowing-282902.mp3');
+            sounds.meow3 = new Audio('sounds/sound_garage-cat-meow-8-fx-306184.mp3');
+            sounds.cute = new Audio('sounds/stu9-cute-cat-352656.mp3');
+            sounds.purr = new Audio('sounds/universfield-purring-cat-156459.mp3');
+            sounds.button = new Audio('sounds/soundreality-button-202966.mp3');
+            
+            // Set volume for all sounds
+            Object.values(sounds).forEach(sound => {
+                sound.volume = sfxVolume;
+            });
+            
+            // Start music on first user interaction
+            document.addEventListener('click', () => {
+                if (backgroundMusic.paused) {
+                    backgroundMusic.play().catch(e => console.log('Music autoplay prevented'));
+                }
+            }, { once: true });
+        }
+        
+        function playSound(soundName) {
+            if (sounds[soundName]) {
+                sounds[soundName].currentTime = 0;
+                sounds[soundName].play().catch(e => console.log('Sound play failed'));
+            }
+        }
+        
+        function playRandomMeow() {
+            const meows = ['meow1', 'meow2', 'meow3'];
+            const random = meows[Math.floor(Math.random() * meows.length)];
+            playSound(random);
+        }
+
+        function loadCharacter() {
+            updateLoadingProgress('Loading character model...');
+            const loader = new FBXLoader();
+            
+            // Preload texture
+            const textureLoader = new THREE.TextureLoader();
+            let loadedTexture = null;
+            let textureReady = false;
+            let characterReady = false;
+            
+            textureLoader.load('textures/e8ac44da4f2641a190a3b03367783ead_RGB_gltf_embedded_1.png', 
+                (texture) => {
+                    loadedTexture = texture;
+                    textureReady = true;
+                    console.log('✅ Texture loaded successfully');
+                    if (characterReady) applyTexture();
+                },
+                undefined,
+                (err) => {
+                    console.warn('⚠️ Texture not found, using default material');
+                    textureReady = true;
+                    if (characterReady) applyTexture();
+                }
+            );
+            
+            function applyTexture() {
+                character.traverse((child) => {
+                    if (child.isMesh) {
+                        if (loadedTexture) {
+                            child.material = new THREE.MeshStandardMaterial({
+                                map: loadedTexture,
+                                roughness: 0.8,
+                                metalness: 0.2
+                            });
+                        } else {
+                            // Fallback material if texture fails
+                            child.material = new THREE.MeshStandardMaterial({
+                                color: 0x8B4513, // Brown color for cat
+                                roughness: 0.8,
+                                metalness: 0.2
+                            });
+                        }
+                        child.castShadow = false; // Disable shadows
+                    }
+                });
+            }
+            
+            loader.load('animations/Happy Idle.fbx', (fbx) => {
+                character = fbx;
+                
+                // Scale - ENORMOUS!
+                const scaleFactor = 150; // Even bigger!
+                character.scale.set(scaleFactor, scaleFactor, scaleFactor);
+                
+                // Position - adjusted height!
+                const box = new THREE.Box3().setFromObject(character);
+                const center = box.getCenter(new THREE.Vector3());
+                character.position.x = -center.x;
+                character.position.y = -box.min.y + 185; // Lowered by 70px (was 300)
+                character.position.z = -center.z;
+                
+                scene.add(character);
+                characterReady = true;
+                
+                if (textureReady) applyTexture();
+                
+                mixer = new THREE.AnimationMixer(character);
+                
+                updateLoadingProgress('Loading animations...');
+                loadAnimations();
+            });
+        }
+
+        function loadAnimations() {
+            const loader = new FBXLoader();
+            let loaded = 0;
+            const total = priorityAnimations.length;
+            
+            // Load priority animations first
+            priorityAnimations.forEach((file) => {
+                const name = file.replace('.fbx', '').toLowerCase().replace(/\s+/g, '_').replace(/[(),]/g, '');
+                
+                loader.load('animations/' + file, (fbx) => {
+                    if (fbx.animations && fbx.animations.length > 0) {
+                        const clip = fbx.animations[0];
+                        const action = mixer.clipAction(clip);
+                        action.setLoop(THREE.LoopRepeat);
+                        animations[name] = action;
+                        
+                        loaded++;
+                        updateLoadingProgress(`Loading animations... ${loaded}/${total}`);
+                        
+                        if (loaded === 1) {
+                            playIdleAnimation();
+                        }
+                        
+                        if (loaded === total) {
+                            // Hide loading screen and start game
+                            setTimeout(() => {
+                                document.getElementById('loading').classList.add('hidden');
+                                playIdleAnimation();
+                                startGame();
+                                
+                                // Load remaining animations in background
+                                loadBackgroundAnimations();
+                            }, 300);
+                        }
+                    }
+                }, undefined, () => {
+                    loaded++;
+                    updateLoadingProgress(`Loading animations... ${loaded}/${total}`);
+                });
+            });
+        }
+        
+        function loadBackgroundAnimations() {
+            const loader = new FBXLoader();
+            let loaded = 0;
+            
+            backgroundAnimations.forEach((file) => {
+                const name = file.replace('.fbx', '').toLowerCase().replace(/\s+/g, '_').replace(/[(),]/g, '');
+                
+                loader.load('animations/' + file, (fbx) => {
+                    if (fbx.animations && fbx.animations.length > 0) {
+                        const clip = fbx.animations[0];
+                        const action = mixer.clipAction(clip);
+                        action.setLoop(THREE.LoopRepeat);
+                        animations[name] = action;
+                        
+                        loaded++;
+                        if (loaded % 10 === 0) {
+                            console.log(`Background loading: ${loaded}/${backgroundAnimations.length}`);
+                        }
+                    }
+                }, undefined, () => {
+                    loaded++;
+                });
+            });
+        }
+
+        function playAnimation(name, duration = 0) {
+            if (!animations[name]) return;
+            
+            if (currentAction && currentAction !== animations[name]) {
+                currentAction.fadeOut(0.3);
+            }
+            
+            currentAction = animations[name];
+            currentAction.reset();
+            currentAction.fadeIn(0.3);
+            currentAction.setLoop(THREE.LoopOnce);
+            currentAction.clampWhenFinished = true;
+            currentAction.play();
+            
+            // If duration specified, return to idle after
+            if (duration > 0) {
+                isAnimating = true;
+                setTimeout(() => {
+                    playIdleAnimation();
+                    isAnimating = false;
+                }, duration);
+            }
+        }
+        
+        function playIdleAnimation() {
+            if (!animations.happy_idle) return;
+            
+            if (currentAction) {
+                currentAction.fadeOut(0.5);
+            }
+            
+            currentAction = animations.happy_idle;
+            currentAction.reset();
+            currentAction.fadeIn(0.5);
+            currentAction.setLoop(THREE.LoopRepeat);
+            currentAction.play();
+        }
+
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const delta = clock.getDelta();
+            if (mixer) mixer.update(delta);
+            
+            renderer.render(scene, camera);
+        }
+
+        function onResize() {
+            const container = document.getElementById('canvas-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function updateUI() {
+            const hungerEl = document.getElementById('hunger');
+            const happinessEl = document.getElementById('happiness');
+            const energyEl = document.getElementById('energy');
+            
+            hungerEl.style.width = stats.hunger + '%';
+            hungerEl.textContent = Math.round(stats.hunger) + '%';
+            
+            happinessEl.style.width = stats.happiness + '%';
+            happinessEl.textContent = Math.round(stats.happiness) + '%';
+            
+            energyEl.style.width = stats.energy + '%';
+            energyEl.textContent = Math.round(stats.energy) + '%';
+        }
+
+        function showMessage(text) {
+            const msg = document.getElementById('status-message');
+            msg.textContent = text;
+            msg.classList.add('show');
+            setTimeout(() => msg.classList.remove('show'), 2000);
+        }
+
+        function startGame() {
+            gameInterval = setInterval(() => {
+                // Slower stat decrease
+                stats.hunger = Math.max(0, stats.hunger - 0.15); // Was 0.5
+                stats.happiness = Math.max(0, stats.happiness - 0.1); // Was 0.3
+                stats.energy = Math.max(0, stats.energy - 0.08); // Was 0.2
+                updateUI();
+                
+                // Auto animations based on stats
+                if (stats.hunger < 20 && animations.crying && !isAnimating) {
+                    playAnimation('crying', 3000);
+                } else if (stats.energy < 15 && animations.yawn && !isAnimating) {
+                    playAnimation('yawn', 2000);
+                } else if (stats.happiness < 20 && animations.sad_idle && !isAnimating) {
+                    playAnimation('sad_idle', 3000);
+                } else if (stats.happiness > 90 && Math.random() > 0.98 && animations.excited && !isAnimating) {
+                    playAnimation('excited', 3000);
+                }
+            }, 3000); // Slower interval: 3 seconds instead of 2
+        }
+
+        window.feedPet = () => {
+            if (isAnimating) return; // Block if animating
+            
+            playSound('button');
+            playRandomMeow();
+            
+            stats.hunger = Math.min(100, stats.hunger + 30);
+            stats.happiness = Math.min(100, stats.happiness + 10);
+            updateUI();
+            addXP(10);
+            
+            const feedAnims = ['drinking', 'standing_thumbs_up', 'excited'];
+            const randomAnim = feedAnims[Math.floor(Math.random() * feedAnims.length)];
+            playAnimation(randomAnim, 3000);
+            showMessage('😋 Yummy! +10 XP');
+        };
+
+        window.playWithPet = () => {
+            if (isAnimating) return; // Block if animating
+            
+            playSound('button');
+            playSound('cute');
+            
+            stats.happiness = Math.min(100, stats.happiness + 30);
+            stats.energy = Math.max(0, stats.energy - 10);
+            updateUI();
+            addXP(15);
+            
+            const playAnims = ['dancing', 'silly_dancing', 'dancing_twerk', 'northern_soul_dance', 'laughing'];
+            const randomAnim = playAnims[Math.floor(Math.random() * playAnims.length)];
+            playAnimation(randomAnim, 5000);
+            showMessage('🎉 So fun! +15 XP');
+        };
+
+        window.sleepPet = () => {
+            if (isAnimating) return; // Block if animating
+            
+            playSound('button');
+            playSound('purr');
+            
+            stats.energy = Math.min(100, stats.energy + 40);
+            stats.happiness = Math.min(100, stats.happiness + 5);
+            updateUI();
+            addXP(12);
+            
+            isAnimating = true;
+            playAnimation('laying_sleeping', 0);
+            showMessage('😴 Zzz... +12 XP');
+            setTimeout(() => {
+                playAnimation('getting_up', 0);
+                setTimeout(() => {
+                    playIdleAnimation();
+                    isAnimating = false;
+                }, 2000);
+            }, 4000);
+        };
+
+        window.dancePet = () => {
+            if (isAnimating) return; // Block if animating
+            
+            playSound('button');
+            playRandomMeow();
+            
+            stats.happiness = Math.min(100, stats.happiness + 20);
+            stats.energy = Math.max(0, stats.energy - 15);
+            updateUI();
+            addXP(20);
+            
+            const danceAnims = ['dancing_maraschino_step', 'dancing_running_man', 'northern_soul_floor_combo', 'victory'];
+            const randomAnim = danceAnims[Math.floor(Math.random() * danceAnims.length)];
+            playAnimation(randomAnim, 5000);
+            showMessage('💃 Dance time! +20 XP');
+        };
+        
+        window.toggleSettings = () => {
+            const modal = document.getElementById('settings-modal');
+            modal.classList.toggle('show');
+            playSound('button');
+        };
+        
+        window.updateMusicVolume = (value) => {
+            musicVolume = value / 100;
+            backgroundMusic.volume = musicVolume;
+            document.getElementById('music-value').textContent = value + '%';
+        };
+        
+        window.updateSFXVolume = (value) => {
+            sfxVolume = value / 100;
+            Object.values(sounds).forEach(sound => {
+                sound.volume = sfxVolume;
+            });
+            document.getElementById('sfx-value').textContent = value + '%';
+        };
+        
+        function addXP(amount) {
+            playerXP += amount;
+            const xpNeeded = playerLevel * 100;
+            
+            if (playerXP >= xpNeeded) {
+                playerXP -= xpNeeded;
+                playerLevel++;
+                document.getElementById('level').textContent = playerLevel;
+                showMessage(`🎉 Level Up! Now Level ${playerLevel}!`);
+                playAnimation('victory', 3000);
+            }
+            
+            const xpPercent = (playerXP / xpNeeded) * 100;
+            document.getElementById('xp-fill').style.width = xpPercent + '%';
+        }
+        
+        window.nextTutorial = () => {
+            tutorialStep++;
+            
+            const tutorials = [
+                {
+                    emoji: '👋',
+                    title: 'Welcome!',
+                    text: "Let's get started with your virtual pet!",
+                    showInput: false
+                },
+                {
+                    emoji: '🐾',
+                    title: "What's your pet's name?",
+                    text: 'Choose a unique name for your companion!',
+                    showInput: true
+                },
+                {
+                    emoji: '🍔',
+                    title: 'Keep Your Pet Fed!',
+                    text: 'Click the Feed button when the Hunger bar gets low. Your pet needs food to stay happy!',
+                    showInput: false
+                },
+                {
+                    emoji: '😊',
+                    title: 'Make Your Pet Happy!',
+                    text: 'Play with your pet to increase Happiness. Happy pets are more fun!',
+                    showInput: false
+                },
+                {
+                    emoji: '⚡',
+                    title: 'Rest is Important!',
+                    text: 'Use the Sleep button to restore Energy. Tired pets need rest!',
+                    showInput: false
+                },
+                {
+                    emoji: '⭐',
+                    title: 'Level Up!',
+                    text: 'Earn XP by taking care of your pet. Level up to unlock rewards!',
+                    showInput: false
+                },
+                {
+                    emoji: '🎮',
+                    title: 'Ready to Play!',
+                    text: "You're all set! Take good care of your pet and have fun!",
+                    showInput: false
+                }
+            ];
+            
+            if (tutorialStep === 2) {
+                // Save name
+                const nameInput = document.getElementById('name-input');
+                if (nameInput.value.trim()) {
+                    playerName = nameInput.value.trim();
+                    document.getElementById('pet-name').textContent = '🐾 ' + playerName;
+                } else {
+                    tutorialStep--;
+                    showMessage('Please enter a name!');
+                    return;
+                }
+            }
+            
+            if (tutorialStep >= tutorials.length) {
+                document.getElementById('tutorial-modal').classList.add('hidden');
+                return;
+            }
+            
+            const current = tutorials[tutorialStep];
+            document.getElementById('tutorial-emoji').textContent = current.emoji;
+            document.getElementById('tutorial-title').textContent = current.title;
+            document.getElementById('tutorial-text').textContent = current.text;
+            document.getElementById('name-input').style.display = current.showInput ? 'block' : 'none';
+        };
+        
+        window.changeName = () => {
+            const newName = prompt('Enter new name for your pet:', playerName || 'My Pet');
+            if (newName && newName.trim()) {
+                playerName = newName.trim();
+                document.getElementById('pet-name').textContent = '🐾 ' + playerName;
+            }
+        };
+        
+        window.skipTutorial = () => {
+            playSound('button');
+            playerName = 'My Pet';
+            document.getElementById('pet-name').textContent = '🐾 ' + playerName;
+            document.getElementById('tutorial-modal').classList.add('hidden');
+        };
+
+        window.connectWallet = async () => {
+            playSound('button');
+            
+            if (typeof window.ethereum === 'undefined') {
+                showMessage('❌ Please install MetaMask!');
+                window.open('https://metamask.io/download/', '_blank');
+                return;
+            }
+            
+            try {
+                // Request account access
+                const accounts = await window.ethereum.request({ 
+                    method: 'eth_requestAccounts' 
+                });
+                
+                userAccount = accounts[0];
+                
+                // Check if on Ritual network
+                const chainId = await window.ethereum.request({ 
+                    method: 'eth_chainId' 
+                });
+                
+                if (chainId !== RITUAL_CHAIN_ID) {
+                    // Try to switch to Ritual network
+                    try {
+                        await window.ethereum.request({
+                            method: 'wallet_switchEthereumChain',
+                            params: [{ chainId: RITUAL_CHAIN_ID }],
+                        });
+                    } catch (switchError) {
+                        // Network not added, add it
+                        if (switchError.code === 4902) {
+                            try {
+                                await window.ethereum.request({
+                                    method: 'wallet_addEthereumChain',
+                                    params: [RITUAL_CONFIG],
+                                });
+                            } catch (addError) {
+                                showMessage('❌ Failed to add Ritual network');
+                                return;
+                            }
+                        } else {
+                            showMessage('❌ Failed to switch network');
+                            return;
+                        }
+                    }
+                }
+                
+                // Initialize ethers.js provider and signer
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                signer = provider.getSigner();
+                
+                // Initialize contract if deployed
+                if (CONTRACT_ADDRESS !== '0x0000000000000000000000000000000000000000') {
+                    contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+                }
+                
+                // Update UI
+                const shortAddress = userAccount.slice(0, 6) + '...' + userAccount.slice(-4);
+                document.getElementById('connect-wallet-btn').textContent = '✅ ' + shortAddress;
+                document.getElementById('web3-section').style.display = 'block';
+                showMessage('🎉 Connected to Ritual!');
+                
+                // Check if user has minted pet
+                await checkMintedPet();
+                
+                // Listen for account changes
+                window.ethereum.on('accountsChanged', (accounts) => {
+                    if (accounts.length === 0) {
+                        userAccount = null;
+                        provider = null;
+                        signer = null;
+                        contract = null;
+                        document.getElementById('connect-wallet-btn').textContent = '🦊 Connect Wallet';
+                        document.getElementById('web3-section').style.display = 'none';
+                        showMessage('👋 Wallet disconnected');
+                    } else {
+                        userAccount = accounts[0];
+                        const shortAddress = userAccount.slice(0, 6) + '...' + userAccount.slice(-4);
+                        document.getElementById('connect-wallet-btn').textContent = '✅ ' + shortAddress;
+                        checkMintedPet();
+                    }
+                });
+                
+                // Listen for chain changes
+                window.ethereum.on('chainChanged', (chainId) => {
+                    if (chainId !== RITUAL_CHAIN_ID) {
+                        showMessage('⚠️ Please switch to Ritual Testnet');
+                    }
+                    window.location.reload(); // Reload on chain change
+                });
+                
+            } catch (error) {
+                console.error('Connection error:', error);
+                showMessage('❌ Connection failed');
+            }
+        };
+        
+        async function checkMintedPet() {
+            if (!contract || !userAccount) {
+                return;
+            }
+            
+            try {
+                // Check if user has minted a pet
+                const hasPet = await contract.hasPet(userAccount);
+                
+                if (hasPet) {
+                    // Get pet stats from blockchain
+                    const petStats = await contract.getPetStats(userAccount);
+                    const petName = petStats.name;
+                    
+                    // Update pet name display at top
+                    playerName = petName;
+                    document.getElementById('pet-name').textContent = '🐾 ' + petName;
+                    
+                    // Update mint button in settings
+                    document.getElementById('mint-btn-settings').textContent = '✅ ' + petName;
+                    document.getElementById('mint-btn-settings').disabled = true;
+                    document.getElementById('mint-btn-settings').style.opacity = '0.6';
+                    
+                    // Load stats from blockchain
+                    stats.hunger = Number(petStats.hunger);
+                    stats.happiness = Number(petStats.happiness);
+                    stats.energy = Number(petStats.energy);
+                    playerLevel = Number(petStats.level);
+                    playerXP = Number(petStats.experience);
+                    
+                    // Update UI
+                    document.getElementById('level').textContent = playerLevel;
+                    const xpNeeded = playerLevel * 100;
+                    const xpPercent = (playerXP / xpNeeded) * 100;
+                    document.getElementById('xp-fill').style.width = xpPercent + '%';
+                    updateUI();
+                    
+                    console.log('✅ Loaded pet from blockchain:', petName);
+                    showMessage('✅ Loaded ' + petName + ' from blockchain!');
+                }
+            } catch (error) {
+                console.log('Check mint error:', error);
+            }
+        }
+        
+        window.mintPet = async () => {
+            if (!userAccount) {
+                showMessage('❌ Please connect wallet first!');
+                return;
+            }
+            
+            if (!contract) {
+                showMessage('⚠️ Contract not deployed yet. Coming soon!');
+                return;
+            }
+            
+            playSound('button');
+            
+            const name = playerName || 'My Pet';
+            
+            try {
+                showMessage('⏳ Minting your pet...');
+                
+                // Check if name is available
+                const isAvailable = await contract.isNameAvailable(name);
+                if (!isAvailable) {
+                    showMessage('❌ Name already taken! Choose another.');
+                    return;
+                }
+                
+                // Mint cost: 0.0001 RITUAL
+                const mintCost = ethers.utils.parseEther('0.0001');
+                
+                // Call mintPet function
+                const tx = await contract.mintPet(name, {
+                    value: mintCost,
+                    gasLimit: 300000 // Set reasonable gas limit
+                });
+                
+                showMessage('⏳ Waiting for confirmation...');
+                
+                // Wait for transaction to be mined
+                const receipt = await tx.wait();
+                
+                showMessage('✅ Pet minted successfully!');
+                playAnimation('victory', 3000);
+                playSound('purr');
+                
+                // Update pet name at top
+                playerName = name;
+                document.getElementById('pet-name').textContent = '🐾 ' + name;
+                
+                // Update button in settings
+                document.getElementById('mint-btn-settings').textContent = '✅ ' + name;
+                document.getElementById('mint-btn-settings').disabled = true;
+                document.getElementById('mint-btn-settings').style.opacity = '0.6';
+                
+                console.log('Mint TX:', receipt.transactionHash);
+                
+            } catch (error) {
+                console.error('Mint error:', error);
+                if (error.code === 4001 || error.code === 'ACTION_REJECTED') {
+                    showMessage('❌ Transaction rejected');
+                } else if (error.message.includes('already exists')) {
+                    showMessage('❌ You already have a pet!');
+                } else if (error.message.includes('Insufficient')) {
+                    showMessage('❌ Insufficient RITUAL tokens');
+                } else {
+                    showMessage('❌ Mint failed. Check console.');
+                }
+            }
+        };
+        
+        window.syncPet = async () => {
+            if (!userAccount) {
+                showMessage('❌ Please connect wallet first!');
+                return;
+            }
+            
+            if (!contract) {
+                showMessage('⚠️ Contract not deployed yet. Coming soon!');
+                return;
+            }
+            
+            playSound('button');
+            
+            try {
+                // Check if user has minted pet first
+                const hasPet = await contract.hasPet(userAccount);
+                if (!hasPet) {
+                    showMessage('❌ Please mint your pet first!');
+                    return;
+                }
+                
+                showMessage('⏳ Syncing progress...');
+                
+                // Sync cost: 0.00005 RITUAL
+                const syncCost = ethers.utils.parseEther('0.00005');
+                
+                // Prepare data
+                const hunger = Math.round(stats.hunger);
+                const happiness = Math.round(stats.happiness);
+                const energy = Math.round(stats.energy);
+                
+                // Call syncPet function
+                const tx = await contract.syncPet(
+                    hunger,
+                    happiness,
+                    energy,
+                    playerLevel,
+                    playerXP,
+                    {
+                        value: syncCost,
+                        gasLimit: 200000 // Set reasonable gas limit
+                    }
+                );
+                
+                showMessage('⏳ Waiting for confirmation...');
+                
+                // Wait for transaction to be mined
+                const receipt = await tx.wait();
+                
+                showMessage('✅ Progress synced to blockchain!');
+                playSound('purr');
+                
+                console.log('Sync TX:', receipt.transactionHash);
+                
+            } catch (error) {
+                console.error('Sync error:', error);
+                if (error.code === 4001 || error.code === 'ACTION_REJECTED') {
+                    showMessage('❌ Transaction rejected');
+                } else if (error.message.includes('does not exist')) {
+                    showMessage('❌ Please mint your pet first!');
+                } else if (error.message.includes('Insufficient')) {
+                    showMessage('❌ Insufficient RITUAL tokens');
+                } else {
+                    showMessage('❌ Sync failed. Check console.');
+                }
+            }
+        };
+        
+        window.loadProgress = async () => {
+            if (!userAccount) {
+                showMessage('❌ Please connect wallet first!');
+                return;
+            }
+            
+            if (!contract) {
+                showMessage('⚠️ Contract not deployed yet. Coming soon!');
+                return;
+            }
+            
+            playSound('button');
+            
+            try {
+                // Check if user has minted pet
+                const hasPet = await contract.hasPet(userAccount);
+                if (!hasPet) {
+                    showMessage('❌ No pet found. Please mint first!');
+                    return;
+                }
+                
+                showMessage('⏳ Loading from blockchain...');
+                
+                // Get pet stats from blockchain
+                const petStats = await contract.getPetStats(userAccount);
+                
+                // Update game state
+                playerName = petStats.name;
+                stats.hunger = Number(petStats.hunger);
+                stats.happiness = Number(petStats.happiness);
+                stats.energy = Number(petStats.energy);
+                playerLevel = Number(petStats.level);
+                playerXP = Number(petStats.experience);
+                
+                // Update UI
+                document.getElementById('pet-name').textContent = '🐾 ' + playerName;
+                document.getElementById('level').textContent = playerLevel;
+                
+                const xpNeeded = playerLevel * 100;
+                const xpPercent = (playerXP / xpNeeded) * 100;
+                document.getElementById('xp-fill').style.width = xpPercent + '%';
+                
+                updateUI();
+                
+                showMessage('✅ Loaded ' + playerName + ' from blockchain!');
+                playSound('purr');
+                
+                console.log('Loaded pet:', {
+                    name: playerName,
+                    hunger: stats.hunger,
+                    happiness: stats.happiness,
+                    energy: stats.energy,
+                    level: playerLevel,
+                    xp: playerXP
+                });
+                
+            } catch (error) {
+                console.error('Load error:', error);
+                if (error.message.includes('does not exist')) {
+                    showMessage('❌ No pet found. Please mint first!');
+                } else {
+                    showMessage('❌ Load failed. Check console.');
+                }
+            }
+        };
+
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+{
+  "name": "my-talking-pet-web3",
+  "version": "1.0.0",
+  "description": "My Talking Pet game with Web3 integration",
+  "scripts": {
+    "start": "http-server -p 8080 -c-1",
+    "dev": "http-server -p 8080 -c-1 -o"
+  },
+  "keywords": [
+    "web3",
+    "game",
+    "3d",
+    "ritual",
+    "blockchain"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "dotenv": "^17.4.2",
+    "hardhat": "^2.28.6",
+    "http-server": "^14.1.1"
+  },
+  "type": "module"
+}
