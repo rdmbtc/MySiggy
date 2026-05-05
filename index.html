@@ -1924,7 +1924,14 @@
                 if (hasPet) {
                     // Get pet stats from blockchain
                     const petStats = await contract.getPetStats(userAccount);
-                    const petName = petStats.name;
+                    
+                    // Ethers.js returns both array indices and named properties
+                    const petName = petStats.name || petStats[0];
+                    const hunger = Number(petStats.hunger || petStats[1]);
+                    const happiness = Number(petStats.happiness || petStats[2]);
+                    const energy = Number(petStats.energy || petStats[3]);
+                    const level = Number(petStats.level || petStats[4]);
+                    const experience = Number(petStats.experience || petStats[5]);
                     
                     // Update pet name display at top
                     playerName = petName;
@@ -1936,11 +1943,11 @@
                     document.getElementById('mint-btn-settings').style.opacity = '0.6';
                     
                     // Load stats from blockchain
-                    stats.hunger = Number(petStats.hunger);
-                    stats.happiness = Number(petStats.happiness);
-                    stats.energy = Number(petStats.energy);
-                    playerLevel = Number(petStats.level);
-                    playerXP = Number(petStats.experience);
+                    stats.hunger = hunger;
+                    stats.happiness = happiness;
+                    stats.energy = energy;
+                    playerLevel = level;
+                    playerXP = experience;
                     
                     // Update UI
                     document.getElementById('level').textContent = playerLevel;
@@ -1949,11 +1956,18 @@
                     document.getElementById('xp-fill').style.width = xpPercent + '%';
                     updateUI();
                     
-                    console.log('✅ Loaded pet from blockchain:', petName);
+                    console.log('✅ Loaded pet from blockchain:', {
+                        name: petName,
+                        hunger,
+                        happiness,
+                        energy,
+                        level,
+                        experience
+                    });
                     showMessage('✅ Loaded ' + petName + ' from blockchain!');
                 }
             } catch (error) {
-                console.log('Check mint error:', error);
+                console.error('Check mint error:', error);
             }
         }
         
@@ -2148,13 +2162,21 @@
                 // Get pet stats from blockchain
                 const petStats = await contract.getPetStats(userAccount);
                 
+                // Ethers.js returns both array indices and named properties
+                const petName = petStats.name || petStats[0];
+                const hunger = Number(petStats.hunger || petStats[1]);
+                const happiness = Number(petStats.happiness || petStats[2]);
+                const energy = Number(petStats.energy || petStats[3]);
+                const level = Number(petStats.level || petStats[4]);
+                const experience = Number(petStats.experience || petStats[5]);
+                
                 // Update game state
-                playerName = petStats.name;
-                stats.hunger = Number(petStats.hunger);
-                stats.happiness = Number(petStats.happiness);
-                stats.energy = Number(petStats.energy);
-                playerLevel = Number(petStats.level);
-                playerXP = Number(petStats.experience);
+                playerName = petName;
+                stats.hunger = hunger;
+                stats.happiness = happiness;
+                stats.energy = energy;
+                playerLevel = level;
+                playerXP = experience;
                 
                 // Update UI
                 document.getElementById('pet-name').textContent = '🐾 ' + playerName;
