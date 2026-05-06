@@ -420,6 +420,30 @@
             opacity: 0.9;
         }
         
+        .loading-bar {
+            width: 300px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px auto 10px;
+        }
+        
+        .loading-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        
+        .loading-percentage {
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 10px;
+            opacity: 0.8;
+        }
+        
         #top-bar {
             position: fixed;
             top: 0;
@@ -1489,7 +1513,11 @@
         <div class="loading-content">
             <div class="spinner"></div>
             <div class="loading-text">Loading Your Pet...</div>
+            <div class="loading-bar">
+                <div class="loading-bar-fill" id="loading-bar-fill"></div>
+            </div>
             <div class="loading-progress" id="loading-progress">Preparing character...</div>
+            <div class="loading-percentage" id="loading-percentage">0%</div>
         </div>
     </div>
     
@@ -1767,6 +1795,93 @@
         
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        // IndexedDB for animation caching
+        let animationDB;
+        const DB_NAME = 'MySiggyAnimations';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'animations';
+        
+        // Initialize IndexedDB
+        function initIndexedDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                
+                request.onerror = () => {
+                    console.warn('IndexedDB not available, using network only');
+                    resolve(null);
+                };
+                
+                request.onsuccess = (event) => {
+                    animationDB = event.target.result;
+                    console.log('✅ IndexedDB initialized');
+                    resolve(animationDB);
+                };
+                
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME, { keyPath: 'name' });
+                        console.log('📦 IndexedDB store created');
+                    }
+                };
+            });
+        }
+        
+        // Save animation to IndexedDB
+        async function saveAnimationToCache(name, data) {
+            if (!animationDB) return;
+            
+            try {
+                const transaction = animationDB.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                await store.put({ name, data, timestamp: Date.now() });
+                console.log(`💾 Cached animation: ${name}`);
+            } catch (error) {
+                console.warn('Failed to cache animation:', error);
+            }
+        }
+        
+        // Get animation from IndexedDB
+        async function getAnimationFromCache(name) {
+            if (!animationDB) return null;
+            
+            try {
+                const transaction = animationDB.transaction([STORE_NAME], 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.get(name);
+                
+                return new Promise((resolve) => {
+                    request.onsuccess = () => {
+                        if (request.result) {
+                            console.log(`📦 Loaded from cache: ${name}`);
+                            resolve(request.result.data);
+                        } else {
+                            resolve(null);
+                        }
+                    };
+                    request.onerror = () => resolve(null);
+                });
+            } catch (error) {
+                console.warn('Failed to get cached animation:', error);
+                return null;
+            }
+        }
+        
+        // Loading progress tracking
+        let totalAnimationsToLoad = 0;
+        let loadedAnimationsCount = 0;
+        
+        function updateLoadingBar() {
+            if (totalAnimationsToLoad === 0) return;
+            
+            const percentage = Math.round((loadedAnimationsCount / totalAnimationsToLoad) * 100);
+            const barFill = document.getElementById('loading-bar-fill');
+            const percentageText = document.getElementById('loading-percentage');
+            
+            if (barFill) barFill.style.width = percentage + '%';
+            if (percentageText) percentageText.textContent = percentage + '%';
+        }
+
         let scene, camera, renderer, character, mixer;
         let animations = {};
         let currentAction = null;
@@ -1860,12 +1975,18 @@
         const interactiveAnims = ['boxing', 'boxing_1', 'hit_to_body_1', 'hit_to_body', 'kip_up'];
         let lastInteractionTime = 0;
 
-        // Priority animations - load first (reduced set)
+        // Priority animations - load first (MINIMAL set for instant start)
         const priorityAnimations = [
             'Happy Idle.fbx',
-            'Drinking.fbx',
+            'Drinking.fbx'
+        ];
+        
+        // Essential animations - load second (for basic gameplay)
+        const essentialAnimations = [
             'Dancing.fbx',
-            'Laying Sleeping.fbx'
+            'Laying Sleeping.fbx',
+            'Getting Up.fbx',
+            'Excited.fbx'
         ];
         
         // All other animations - load in background
@@ -1874,7 +1995,7 @@
             'Breathing Idle.fbx', 'Dancing Maraschino Step.fbx',
             'Dancing Running Man.fbx', 'Dancing Twerk.fbx',
             'Falling Down.fbx', 'Falling Into Pool.fbx',
-            'Falling To Landing.fbx', 'Falling.fbx', 'Getting Up.fbx',
+            'Falling To Landing.fbx', 'Falling.fbx',
             'Having A Meeting, Female.fbx', 'Hit To Body (1).fbx', 'Hit To Body.fbx',
             'Jogging.fbx', 'Kip Up.fbx', 'Laughing.fbx',
             'Look Around.fbx', 'No.fbx', 'Northern Soul Dance.fbx',
@@ -1884,11 +2005,13 @@
             'Sitting Idle.fbx', 'Sitting Talking.fbx', 'Sleeping Idle (1).fbx',
             'Sleeping Idle.fbx', 'Standing Clap.fbx', 'Standing Thumbs Up.fbx',
             'Surprised.fbx', 'Talking (1).fbx', 'Talking.fbx', 'Thoughtful Head Shake.fbx',
-            'Victory Idle.fbx', 'Victory.fbx', 'Waving.fbx'
+            'Victory Idle.fbx', 'Victory.fbx', 'Waving.fbx', 'Crying.fbx'
         ];
 
         function updateLoadingProgress(text) {
-            document.getElementById('loading-progress').textContent = text;
+            const progressEl = document.getElementById('loading-progress');
+            if (progressEl) progressEl.textContent = text;
+            updateLoadingBar();
         }
 
         function init() {
@@ -1941,7 +2064,11 @@
             animate();
             initAudio();
             setupInteraction();
-            loadCharacter();
+            
+            // Initialize IndexedDB before loading
+            initIndexedDB().then(() => {
+                loadCharacter();
+            });
             
             // Initialize Lucide icons
             if (typeof lucide !== 'undefined') {
@@ -2157,61 +2284,40 @@
             let loaded = 0;
             const total = priorityAnimations.length;
             
+            totalAnimationsToLoad = priorityAnimations.length + essentialAnimations.length + backgroundAnimations.length;
+            loadedAnimationsCount = 0;
+            
             // Load priority animations first
             priorityAnimations.forEach((file) => {
                 const name = file.replace('.fbx', '').toLowerCase().replace(/\s+/g, '_').replace(/[(),]/g, '');
                 
-                loader.load('animations/' + file, (fbx) => {
-                    if (fbx.animations && fbx.animations.length > 0) {
-                        const clip = fbx.animations[0];
+                // Try to load from cache first
+                getAnimationFromCache(name).then(cachedData => {
+                    if (cachedData) {
+                        // Load from cache
+                        const clip = cachedData;
                         const action = mixer.clipAction(clip);
                         action.setLoop(THREE.LoopRepeat);
                         animations[name] = action;
                         
                         loaded++;
-                        updateLoadingProgress(`Loading animations... ${loaded}/${total}`);
+                        loadedAnimationsCount++;
+                        updateLoadingProgress(`Loading core animations... ${loaded}/${total}`);
                         
                         if (loaded === 1) {
                             playIdleAnimation();
                         }
                         
                         if (loaded === total) {
-                            // Hide loading screen and start game
                             setTimeout(() => {
                                 document.getElementById('loading').classList.add('hidden');
                                 playIdleAnimation();
                                 startGame();
-                                
-                                // Load remaining animations in background
-                                loadBackgroundAnimations();
-                            }, 300);
+                                loadEssentialAnimations();
+                            }, 200);
                         }
-                    }
-                }, undefined, () => {
-                    loaded++;
-                    updateLoadingProgress(`Loading animations... ${loaded}/${total}`);
-                });
-            });
-        }
-        
-        function loadBackgroundAnimations() {
-            // Delay background loading to prioritize initial render
-            setTimeout(() => {
-                const loader = new FBXLoader();
-                let loaded = 0;
-                let batchIndex = 0;
-                const batchSize = 3; // Load 3 at a time
-                
-                function loadBatch() {
-                    const start = batchIndex * batchSize;
-                    const end = Math.min(start + batchSize, backgroundAnimations.length);
-                    
-                    if (start >= backgroundAnimations.length) return;
-                    
-                    for (let i = start; i < end; i++) {
-                        const file = backgroundAnimations[i];
-                        const name = file.replace('.fbx', '').toLowerCase().replace(/\s+/g, '_').replace(/[(),]/g, '');
-                        
+                    } else {
+                        // Load from network
                         loader.load('animations/' + file, (fbx) => {
                             if (fbx.animations && fbx.animations.length > 0) {
                                 const clip = fbx.animations[0];
@@ -2219,23 +2325,163 @@
                                 action.setLoop(THREE.LoopRepeat);
                                 animations[name] = action;
                                 
+                                // Cache the animation
+                                saveAnimationToCache(name, clip);
+                                
                                 loaded++;
-                                if (loaded % 5 === 0) {
-                                    console.log(`Background loading: ${loaded}/${backgroundAnimations.length}`);
+                                loadedAnimationsCount++;
+                                updateLoadingProgress(`Loading core animations... ${loaded}/${total}`);
+                                
+                                if (loaded === 1) {
+                                    playIdleAnimation();
+                                }
+                                
+                                if (loaded === total) {
+                                    setTimeout(() => {
+                                        document.getElementById('loading').classList.add('hidden');
+                                        playIdleAnimation();
+                                        startGame();
+                                        loadEssentialAnimations();
+                                    }, 200);
                                 }
                             }
                         }, undefined, () => {
                             loaded++;
+                            loadedAnimationsCount++;
+                            updateLoadingProgress(`Loading core animations... ${loaded}/${total}`);
+                            if (loaded === total) {
+                                setTimeout(() => {
+                                    document.getElementById('loading').classList.add('hidden');
+                                    playIdleAnimation();
+                                    startGame();
+                                    loadEssentialAnimations();
+                                }, 200);
+                            }
+                        });
+                    }
+                });
+            });
+        }
+        
+        function loadEssentialAnimations() {
+            // Load essential animations for basic gameplay
+            const loader = new FBXLoader();
+            let loaded = 0;
+            
+            console.log('📦 Loading essential animations...');
+            
+            essentialAnimations.forEach((file) => {
+                const name = file.replace('.fbx', '').toLowerCase().replace(/\s+/g, '_').replace(/[(),]/g, '');
+                
+                // Try cache first
+                getAnimationFromCache(name).then(cachedData => {
+                    if (cachedData) {
+                        const clip = cachedData;
+                        const action = mixer.clipAction(clip);
+                        action.setLoop(THREE.LoopRepeat);
+                        animations[name] = action;
+                        
+                        loaded++;
+                        loadedAnimationsCount++;
+                        if (loaded === essentialAnimations.length) {
+                            console.log('✅ Essential animations loaded');
+                            setTimeout(() => loadBackgroundAnimations(), 1000);
+                        }
+                    } else {
+                        loader.load('animations/' + file, (fbx) => {
+                            if (fbx.animations && fbx.animations.length > 0) {
+                                const clip = fbx.animations[0];
+                                const action = mixer.clipAction(clip);
+                                action.setLoop(THREE.LoopRepeat);
+                                animations[name] = action;
+                                
+                                saveAnimationToCache(name, clip);
+                                
+                                loaded++;
+                                loadedAnimationsCount++;
+                                if (loaded === essentialAnimations.length) {
+                                    console.log('✅ Essential animations loaded');
+                                    setTimeout(() => loadBackgroundAnimations(), 1000);
+                                }
+                            }
+                        }, undefined, () => {
+                            loaded++;
+                            loadedAnimationsCount++;
+                            if (loaded === essentialAnimations.length) {
+                                setTimeout(() => loadBackgroundAnimations(), 1000);
+                            }
+                        });
+                    }
+                });
+            });
+        }
+        
+        function loadBackgroundAnimations() {
+            // Delay background loading to prioritize gameplay
+            setTimeout(() => {
+                const loader = new FBXLoader();
+                let loaded = 0;
+                let batchIndex = 0;
+                const batchSize = 5;
+                
+                console.log('📦 Loading background animations...');
+                
+                function loadBatch() {
+                    const start = batchIndex * batchSize;
+                    const end = Math.min(start + batchSize, backgroundAnimations.length);
+                    
+                    if (start >= backgroundAnimations.length) {
+                        console.log('✅ All animations loaded!');
+                        return;
+                    }
+                    
+                    for (let i = start; i < end; i++) {
+                        const file = backgroundAnimations[i];
+                        const name = file.replace('.fbx', '').toLowerCase().replace(/\s+/g, '_').replace(/[(),]/g, '');
+                        
+                        // Try cache first
+                        getAnimationFromCache(name).then(cachedData => {
+                            if (cachedData) {
+                                const clip = cachedData;
+                                const action = mixer.clipAction(clip);
+                                action.setLoop(THREE.LoopRepeat);
+                                animations[name] = action;
+                                
+                                loaded++;
+                                loadedAnimationsCount++;
+                                if (loaded % 10 === 0) {
+                                    console.log(`📦 Background loading: ${loaded}/${backgroundAnimations.length}`);
+                                }
+                            } else {
+                                loader.load('animations/' + file, (fbx) => {
+                                    if (fbx.animations && fbx.animations.length > 0) {
+                                        const clip = fbx.animations[0];
+                                        const action = mixer.clipAction(clip);
+                                        action.setLoop(THREE.LoopRepeat);
+                                        animations[name] = action;
+                                        
+                                        saveAnimationToCache(name, clip);
+                                        
+                                        loaded++;
+                                        loadedAnimationsCount++;
+                                        if (loaded % 10 === 0) {
+                                            console.log(`📦 Background loading: ${loaded}/${backgroundAnimations.length}`);
+                                        }
+                                    }
+                                }, undefined, () => {
+                                    loaded++;
+                                    loadedAnimationsCount++;
+                                });
+                            }
                         });
                     }
                     
                     batchIndex++;
-                    // Load next batch after delay
-                    setTimeout(loadBatch, 500);
+                    setTimeout(loadBatch, 300);
                 }
                 
                 loadBatch();
-            }, 2000); // Wait 2 seconds before starting background load
+            }, 500);
         }
 
         function playAnimation(name, duration = 0) {
