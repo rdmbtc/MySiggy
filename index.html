@@ -428,7 +428,7 @@
             z-index: 100;
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             padding: 16px 24px;
             background: transparent;
         }
@@ -443,6 +443,25 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        
+        /* Mobile: Vertical layout for action buttons */
+        @media (max-width: 768px) {
+            #top-bar {
+                align-items: flex-start;
+            }
+            
+            #top-bar-right {
+                flex-direction: column;
+                gap: 8px;
+                align-items: flex-end;
+            }
+            
+            .top-btn {
+                min-width: 44px;
+            }
         }
         
         #pet-info {
@@ -505,10 +524,11 @@
             align-items: center;
             gap: 6px;
             text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            white-space: nowrap;
         }
         
         .top-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.25);
             transform: translateY(-2px);
         }
         
@@ -520,6 +540,31 @@
             width: 20px;
             height: 20px;
             filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
+        
+        /* Mobile: Smaller buttons */
+        @media (max-width: 768px) {
+            .top-btn {
+                padding: 8px 14px;
+                font-size: 13px;
+            }
+            
+            .top-btn .icon {
+                width: 18px;
+                height: 18px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .top-btn {
+                padding: 7px 12px;
+                font-size: 12px;
+            }
+            
+            .top-btn .icon {
+                width: 16px;
+                height: 16px;
+            }
         }
         
         #settings-btn {
@@ -535,6 +580,31 @@
         #settings-btn .icon {
             width: 22px;
             height: 22px;
+        }
+        
+        /* Mobile: Adjust settings button */
+        @media (max-width: 768px) {
+            #settings-btn {
+                width: 40px;
+                height: 40px;
+            }
+            
+            #settings-btn .icon {
+                width: 20px;
+                height: 20px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            #settings-btn {
+                width: 36px;
+                height: 36px;
+            }
+            
+            #settings-btn .icon {
+                width: 18px;
+                height: 18px;
+            }
         }
         
         #next-action {
@@ -707,6 +777,17 @@
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+        
+        /* Mobile: Adjust badge position */
+        @media (max-width: 768px) {
+            .quest-badge {
+                width: 16px;
+                height: 16px;
+                font-size: 10px;
+                top: -3px;
+                right: -3px;
+            }
         }
         
         /* PWA Install */
@@ -1577,7 +1658,7 @@
             </div>
             
             <button id="submit-score-btn" class="leaderboard-submit" onclick="submitToLeaderboard()" style="display:none;">
-                📊 Submit My Score
+                📊 Update Score Manually
             </button>
             
             <div class="social-share-section" id="social-share-section" style="display:none;">
@@ -2441,6 +2522,11 @@
                 showMessage(`🎉 Level Up! Now Level ${playerLevel}!`);
                 playAnimation('victory', 3000);
                 
+                // Auto-submit score to leaderboard
+                if (userAccount && contract) {
+                    autoSubmitScore();
+                }
+                
                 // Show share prompt for milestone levels
                 if (playerLevel % 5 === 0) {
                     setTimeout(() => {
@@ -2635,7 +2721,22 @@
                         `Thanks @rdmnad for this awesome game! 🔮`;
             
             const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(gameUrl)}`;
-            window.open(twitterUrl, '_blank', 'width=550,height=420');
+            
+            console.log('Opening Twitter share:', twitterUrl);
+            const twitterWindow = window.open(twitterUrl, '_blank', 'width=550,height=420');
+            
+            if (!twitterWindow || twitterWindow.closed || typeof twitterWindow.closed === 'undefined') {
+                // Popup blocked, show message
+                console.warn('Popup blocked');
+                showMessage('⚠️ Please allow popups to share on Twitter');
+                // Try direct navigation as fallback
+                setTimeout(() => {
+                    if (confirm('Open Twitter to share?')) {
+                        window.location.href = twitterUrl;
+                    }
+                }, 100);
+            }
+            
             playSound('button');
         };
         
@@ -2678,7 +2779,21 @@
                             `Thanks @rdmnad! 🔮`;
                 
                 const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(gameUrl)}`;
-                window.open(twitterUrl, '_blank', 'width=550,height=420');
+                
+                console.log('Opening Twitter share:', twitterUrl);
+                const twitterWindow = window.open(twitterUrl, '_blank', 'width=550,height=420');
+                
+                if (!twitterWindow || twitterWindow.closed || typeof twitterWindow.closed === 'undefined') {
+                    // Popup blocked
+                    console.warn('Popup blocked');
+                    showMessage('⚠️ Please allow popups to share on Twitter');
+                    setTimeout(() => {
+                        if (confirm('Open Twitter to share?')) {
+                            window.location.href = twitterUrl;
+                        }
+                    }, 100);
+                }
+                
                 playSound('button');
                 
             } catch (error) {
@@ -2695,7 +2810,21 @@
                         `Thanks @rdmnad! 🔮`;
             
             const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(gameUrl)}`;
-            window.open(twitterUrl, '_blank', 'width=550,height=420');
+            
+            console.log('Opening Twitter share:', twitterUrl);
+            const twitterWindow = window.open(twitterUrl, '_blank', 'width=550,height=420');
+            
+            if (!twitterWindow || twitterWindow.closed || typeof twitterWindow.closed === 'undefined') {
+                // Popup blocked
+                console.warn('Popup blocked');
+                showMessage('⚠️ Please allow popups to share on Twitter');
+                setTimeout(() => {
+                    if (confirm('Open Twitter to share?')) {
+                        window.location.href = twitterUrl;
+                    }
+                }, 100);
+            }
+            
             playSound('button');
         };
         
@@ -2741,6 +2870,44 @@
                 showMessage('❌ Failed to submit score');
             }
         };
+        
+        // Auto-submit score (silent, no animations)
+        async function autoSubmitScore() {
+            if (!userAccount) return;
+            if (!playerName || playerName === 'My Pet') return;
+            
+            try {
+                console.log('🔄 Auto-submitting score to leaderboard...');
+                
+                // Upsert (insert or update) player score
+                const { data, error } = await supabase
+                    .from('leaderboard')
+                    .upsert({
+                        wallet_address: userAccount.toLowerCase(),
+                        pet_name: playerName,
+                        level: playerLevel,
+                        xp: playerXP,
+                        updated_at: new Date().toISOString()
+                    }, {
+                        onConflict: 'wallet_address'
+                    });
+                
+                if (error) throw error;
+                
+                console.log('✅ Score auto-submitted successfully');
+                
+            } catch (error) {
+                console.error('Auto-submit error:', error);
+                // Silent fail - don't show error to user
+            }
+        }
+        
+        // Periodic auto-submit (every 30 seconds)
+        setInterval(() => {
+            if (userAccount && playerName && playerName !== 'My Pet') {
+                autoSubmitScore();
+            }
+        }, 30000); // 30 seconds
         
         // Subscribe to real-time leaderboard updates
         function subscribeToLeaderboard() {
@@ -3081,11 +3248,20 @@
             playSound('button');
             
             const petName = document.getElementById('minted-pet-name').textContent;
+            const gameUrl = 'https://my-siggy.vercel.app';
             const tweetText = `Just minted my Siggy ${petName}! 🐾✨\n\nThis is so cool! Thanks @rdmnad for building this 🔥`;
-            const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+            const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(gameUrl)}`;
+            
+            console.log('Opening Twitter with URL:', tweetUrl);
             
             // Open Twitter in new window
-            window.open(tweetUrl, '_blank', 'width=550,height=420');
+            const twitterWindow = window.open(tweetUrl, '_blank', 'width=550,height=420');
+            
+            if (!twitterWindow) {
+                // Popup blocked, try direct navigation
+                console.warn('Popup blocked, trying direct navigation');
+                window.location.href = tweetUrl;
+            }
             
             // Close modal after sharing
             setTimeout(() => {
