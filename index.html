@@ -3,7 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="MySiggy - Your virtual pet on Ritual blockchain. Feed, play, and level up your pet!">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="MySiggy">
     <title>MySiggy - Play with your Siggy </title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/192x192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/512x512.png">
     
     <!-- Preconnect for faster font loading -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -44,58 +57,69 @@
         
         #ui {
             position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
+            bottom: 0;
+            left: 0;
+            right: 0;
             z-index: 100;
-            width: 90%;
-            max-width: 600px;
+            width: 100%;
+            max-width: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            padding: 12px 16px 20px;
+            border-radius: 24px 24px 0 0;
+            box-shadow: 0 -4px 24px rgba(0,0,0,0.15);
         }
         
         #stats {
             display: flex;
-            gap: 12px;
-            margin-bottom: 20px;
-            background: rgba(255, 255, 255, 0.95);
-            padding: 15px;
-            border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-            backdrop-filter: blur(10px);
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 16px;
         }
         
         .stat {
-            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .stat-icon {
+            font-size: 24px;
+            min-width: 32px;
             text-align: center;
         }
         
+        .stat-info {
+            flex: 1;
+        }
+        
         .stat-label {
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 600;
             color: #495057;
-            margin-bottom: 6px;
-            letter-spacing: 0.3px;
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .stat-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: #495057;
         }
         
         .stat-bar {
             width: 100%;
-            height: 22px;
+            height: 8px;
             background: #e9ecef;
-            border-radius: 15px;
+            border-radius: 10px;
             overflow: hidden;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.08);
-            border: 2px solid #dee2e6;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
         }
         
         .stat-fill {
             height: 100%;
             transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 700;
-            font-size: 11px;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
         
         .hunger { 
@@ -111,67 +135,90 @@
         #actions {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
+            gap: 8px;
         }
         
-        button {
-            padding: 16px 12px;
+        .action-btn {
+            padding: 14px 8px;
             border: none;
-            border-radius: 18px;
+            border-radius: 16px;
             color: white;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s ease;
-            box-shadow: 0 6px 24px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
             font-family: 'Poppins', sans-serif;
-            letter-spacing: 0.3px;
-            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            position: relative;
         }
         
-        button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        .action-btn .emoji {
+            font-size: 24px;
         }
         
-        button:active {
-            transform: translateY(-1px);
+        .action-btn .label {
+            font-size: 11px;
+        }
+        
+        .action-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .action-btn.recommended {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+            50% { box-shadow: 0 4px 24px rgba(255, 215, 0, 0.6); }
         }
         
         /* Mobile responsive */
         @media (max-width: 768px) {
             #ui {
-                width: 95%;
-                bottom: 15px;
+                padding: 10px 12px 16px;
             }
             
             #stats {
-                padding: 10px;
                 gap: 8px;
                 margin-bottom: 12px;
             }
             
+            .stat-icon {
+                font-size: 20px;
+                min-width: 28px;
+            }
+            
             .stat-label {
-                font-size: 10px;
-                margin-bottom: 4px;
+                font-size: 11px;
+            }
+            
+            .stat-value {
+                font-size: 13px;
             }
             
             .stat-bar {
-                height: 18px;
-            }
-            
-            .stat-fill {
-                font-size: 9px;
+                height: 6px;
             }
             
             #actions {
-                gap: 8px;
+                gap: 6px;
             }
             
-            button {
-                padding: 12px 8px;
-                font-size: 11px;
-                border-radius: 12px;
+            .action-btn {
+                padding: 12px 6px;
+            }
+            
+            .action-btn .emoji {
+                font-size: 20px;
+            }
+            
+            .action-btn .label {
+                font-size: 10px;
             }
             
             #pet-name {
@@ -193,69 +240,63 @@
                 height: 6px;
             }
             
-            #wallet {
-                top: 15px;
-                right: 15px;
-                gap: 8px;
+            #top-bar {
+                padding: 10px 15px;
             }
             
-            #wallet button {
+            #top-bar button {
                 padding: 8px 12px;
                 font-size: 11px;
             }
             
             #settings-btn {
-                width: 40px;
-                height: 40px;
+                width: 36px;
+                height: 36px;
                 font-size: 18px;
-            }
-            
-            .tutorial-content {
-                padding: 30px 20px;
-                max-width: 90%;
-            }
-            
-            .tutorial-content h2 {
-                font-size: 22px;
-            }
-            
-            .tutorial-content p {
-                font-size: 14px;
             }
         }
         
         @media (max-width: 480px) {
             #ui {
-                width: 98%;
-                bottom: 10px;
+                padding: 8px 10px 14px;
             }
             
             #stats {
-                padding: 8px;
                 gap: 6px;
                 margin-bottom: 10px;
             }
             
+            .stat-icon {
+                font-size: 18px;
+                min-width: 24px;
+            }
+            
             .stat-label {
-                font-size: 9px;
-                margin-bottom: 3px;
+                font-size: 10px;
+            }
+            
+            .stat-value {
+                font-size: 12px;
             }
             
             .stat-bar {
-                height: 16px;
-            }
-            
-            .stat-fill {
-                font-size: 8px;
+                height: 5px;
             }
             
             #actions {
-                gap: 6px;
+                gap: 5px;
             }
             
-            button {
-                padding: 10px 6px;
-                font-size: 10px;
+            .action-btn {
+                padding: 10px 4px;
+            }
+            
+            .action-btn .emoji {
+                font-size: 18px;
+            }
+            
+            .action-btn .label {
+                font-size: 9px;
             }
             
             #pet-name {
@@ -277,37 +318,19 @@
                 height: 5px;
             }
             
-            #wallet {
-                top: 10px;
-                right: 10px;
-                gap: 6px;
+            #top-bar {
+                padding: 8px 10px;
             }
             
-            #wallet button {
+            #top-bar button {
                 padding: 6px 10px;
                 font-size: 10px;
             }
             
             #settings-btn {
-                width: 36px;
-                height: 36px;
+                width: 32px;
+                height: 32px;
                 font-size: 16px;
-            }
-            
-            .tutorial-content {
-                padding: 25px 15px;
-            }
-            
-            .tutorial-content h2 {
-                font-size: 20px;
-            }
-            
-            .tutorial-content p {
-                font-size: 13px;
-            }
-            
-            .tutorial-emoji {
-                font-size: 48px;
             }
         }
         
@@ -376,33 +399,309 @@
             opacity: 0.9;
         }
         
-        #wallet {
-            position: absolute;
-            top: 25px;
-            right: 25px;
+        #top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
             z-index: 100;
             display: flex;
-            gap: 10px;
+            justify-content: space-between;
             align-items: center;
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
         }
         
-        #wallet button {
-            padding: 14px 28px;
+        #top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        #top-bar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        #pet-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        #pet-name-top {
+            font-size: 16px;
+            font-weight: 700;
+            color: #495057;
+        }
+        
+        #level-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        #level-badge {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            font-size: 15px;
-            border-radius: 15px;
-            white-space: nowrap;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        
+        #xp-bar-top {
+            width: 80px;
+            height: 6px;
+            background: rgba(0,0,0,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        #xp-fill-top {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            transition: width 0.5s;
+            width: 0%;
+        }
+        
+        .top-btn {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .top-btn:active {
+            transform: scale(0.95);
         }
         
         #settings-btn {
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             padding: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 20px;
             border-radius: 50%;
+        }
+        
+        #next-action {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #FFD93D 0%, #FFB800 100%);
+            color: #495057;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 4px 16px rgba(255, 185, 0, 0.4);
+            z-index: 99;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            max-width: 80%;
+            text-align: center;
+        }
+        
+        #next-action.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        /* Daily Quests Modal */
+        #quests-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10004;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        
+        #quests-modal.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .quests-content {
+            background: white;
+            padding: 30px 25px;
+            border-radius: 25px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .quests-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .quests-header h2 {
+            font-size: 24px;
+            color: #495057;
+            margin: 0;
+        }
+        
+        .close-quests {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #6c757d;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+        }
+        
+        .quest-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .quest-item.completed {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        }
+        
+        .quest-icon {
+            font-size: 32px;
+        }
+        
+        .quest-info {
+            flex: 1;
+        }
+        
+        .quest-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #495057;
+            margin-bottom: 4px;
+        }
+        
+        .quest-progress {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 6px;
+        }
+        
+        .quest-progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(0,0,0,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .quest-progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+        }
+        
+        .quest-reward {
+            font-size: 14px;
+            font-weight: 700;
+            color: #FFB800;
+        }
+        
+        .daily-streak {
+            background: linear-gradient(135deg, #FFD93D 0%, #FFB800 100%);
+            padding: 15px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .daily-streak-count {
+            font-size: 32px;
+            font-weight: 700;
+            color: #495057;
+        }
+        
+        #quests-btn {
+            position: relative;
+        }
+        
+        .quest-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #FF4E50;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 11px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* PWA Install */
+        #pwa-install {
+            position: fixed;
+            bottom: 300px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 15px 20px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            z-index: 98;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            max-width: 90%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        #pwa-install.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .pwa-install-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
         }
         
         /* Settings Modal */
@@ -503,27 +802,6 @@
             margin-top: 10px;
         }
         
-        #pet-name {
-            position: absolute;
-            top: 25px;
-            left: 25px;
-            background: white;
-            padding: 14px 28px;
-            border-radius: 15px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            font-size: 22px;
-            font-weight: 700;
-            color: #495057;
-            z-index: 100;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        
-        #pet-name:hover {
-            transform: scale(1.05);
-        }
-        
-        /* Credits */
         #credits {
             position: fixed;
             bottom: 10px;
@@ -562,37 +840,6 @@
                 font-size: 8px;
                 bottom: 5px;
             }
-        }
-        
-        #level-display {
-            position: absolute;
-            top: 80px;
-            left: 25px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            font-size: 16px;
-            font-weight: 700;
-            z-index: 100;
-        }
-        
-        #xp-bar {
-            width: 150px;
-            height: 8px;
-            background: rgba(255,255,255,0.3);
-            border-radius: 10px;
-            margin-top: 8px;
-            overflow: hidden;
-        }
-        
-        #xp-fill {
-            height: 100%;
-            background: white;
-            border-radius: 10px;
-            transition: width 0.5s;
-            width: 0%;
         }
         
         #status-message {
@@ -885,21 +1132,62 @@
     
     <div id="canvas-container"></div>
     
-    <div id="pet-name" onclick="changeName()">🐾 My Pet</div>
-    
-    <div id="level-display">
-        <div>⭐ Level <span id="level">1</span></div>
-        <div id="xp-bar">
-            <div id="xp-fill"></div>
+    <!-- Top Bar -->
+    <div id="top-bar">
+        <div id="top-bar-left">
+            <div id="pet-info">
+                <div id="pet-name-top">🐾 My Pet</div>
+                <div id="level-info">
+                    <div id="level-badge">⭐ Lvl <span id="level-top">1</span></div>
+                    <div id="xp-bar-top">
+                        <div id="xp-fill-top"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="top-bar-right">
+            <button id="quests-btn" class="top-btn" onclick="toggleQuests()">
+                🎯
+                <span class="quest-badge" id="quest-badge" style="display:none;">0</span>
+            </button>
+            <button id="settings-btn" class="top-btn" onclick="toggleSettings()">⚙️</button>
+            <button id="connect-wallet-btn" class="top-btn" onclick="connectWallet()">🦊</button>
         </div>
     </div>
     
-    <div id="wallet">
-        <button id="settings-btn" onclick="toggleSettings()">⚙️</button>
-        <button id="connect-wallet-btn" onclick="connectWallet()">🦊 Connect Wallet</button>
+    <!-- PWA Install Prompt -->
+    <div id="pwa-install">
+        <div style="font-size: 32px;">📱</div>
+        <div style="flex: 1;">
+            <div style="font-size: 14px; font-weight: 700; color: #495057;">Install MySiggy</div>
+            <div style="font-size: 12px; color: #6c757d;">Play offline & get notifications!</div>
+        </div>
+        <button class="pwa-install-btn" onclick="installPWA()">Install</button>
+        <button style="background: none; border: none; font-size: 20px; color: #6c757d; cursor: pointer;" onclick="closePWA()">×</button>
     </div>
     
+    <!-- Next Action Hint -->
+    <div id="next-action"></div>
+    
     <div id="status-message"></div>
+    
+    <!-- Daily Quests Modal -->
+    <div id="quests-modal">
+        <div class="quests-content">
+            <div class="quests-header">
+                <h2>🎯 Daily Quests</h2>
+                <button class="close-quests" onclick="toggleQuests()">×</button>
+            </div>
+            
+            <div class="daily-streak">
+                <div style="font-size: 14px; font-weight: 600; color: #495057; margin-bottom: 8px;">🔥 Daily Streak</div>
+                <div class="daily-streak-count"><span id="streak-count">0</span> Days</div>
+                <div style="font-size: 12px; color: #6c757d; margin-top: 4px;">Keep playing daily!</div>
+            </div>
+            
+            <div id="quests-list"></div>
+        </div>
+    </div>
     
     <!-- Settings Modal -->
     <div id="settings-modal">
@@ -968,29 +1256,59 @@
     <div id="ui">
         <div id="stats">
             <div class="stat">
-                <div class="stat-label">🍔 HUNGER</div>
-                <div class="stat-bar">
-                    <div class="stat-fill hunger" id="hunger" style="width: 70%">70%</div>
+                <div class="stat-icon">🍔</div>
+                <div class="stat-info">
+                    <div class="stat-label">
+                        <span>Hunger</span>
+                        <span class="stat-value" id="hunger-value">70%</span>
+                    </div>
+                    <div class="stat-bar">
+                        <div class="stat-fill hunger" id="hunger-bar" style="width: 70%"></div>
+                    </div>
                 </div>
             </div>
             <div class="stat">
-                <div class="stat-label">😊 HAPPINESS</div>
-                <div class="stat-bar">
-                    <div class="stat-fill happiness" id="happiness" style="width: 80%">80%</div>
+                <div class="stat-icon">😊</div>
+                <div class="stat-info">
+                    <div class="stat-label">
+                        <span>Happiness</span>
+                        <span class="stat-value" id="happiness-value">80%</span>
+                    </div>
+                    <div class="stat-bar">
+                        <div class="stat-fill happiness" id="happiness-bar" style="width: 80%"></div>
+                    </div>
                 </div>
             </div>
             <div class="stat">
-                <div class="stat-label">⚡ ENERGY</div>
-                <div class="stat-bar">
-                    <div class="stat-fill energy" id="energy" style="width: 60%">60%</div>
+                <div class="stat-icon">⚡</div>
+                <div class="stat-info">
+                    <div class="stat-label">
+                        <span>Energy</span>
+                        <span class="stat-value" id="energy-value">60%</span>
+                    </div>
+                    <div class="stat-bar">
+                        <div class="stat-fill energy" id="energy-bar" style="width: 60%"></div>
+                    </div>
                 </div>
             </div>
         </div>
         <div id="actions">
-            <button class="feed" onclick="feedPet()">🍔 Feed</button>
-            <button class="play" onclick="playWithPet()">🎮 Play</button>
-            <button class="sleep" onclick="sleepPet()">😴 Sleep</button>
-            <button class="dance" onclick="dancePet()">💃 Dance</button>
+            <button class="action-btn feed" onclick="feedPet()">
+                <span class="emoji">🍔</span>
+                <span class="label">Feed</span>
+            </button>
+            <button class="action-btn play" onclick="playWithPet()">
+                <span class="emoji">🎮</span>
+                <span class="label">Play</span>
+            </button>
+            <button class="action-btn sleep" onclick="sleepPet()">
+                <span class="emoji">😴</span>
+                <span class="label">Sleep</span>
+            </button>
+            <button class="action-btn dance" onclick="dancePet()">
+                <span class="emoji">💃</span>
+                <span class="label">Dance</span>
+            </button>
         </div>
     </div>
     
@@ -1557,9 +1875,14 @@
             // Cache elements on first call
             if (!cachedElements) {
                 cachedElements = {
-                    hunger: document.getElementById('hunger'),
-                    happiness: document.getElementById('happiness'),
-                    energy: document.getElementById('energy')
+                    hungerBar: document.getElementById('hunger-bar'),
+                    hungerValue: document.getElementById('hunger-value'),
+                    happinessBar: document.getElementById('happiness-bar'),
+                    happinessValue: document.getElementById('happiness-value'),
+                    energyBar: document.getElementById('energy-bar'),
+                    energyValue: document.getElementById('energy-value'),
+                    levelTop: document.getElementById('level-top'),
+                    xpFillTop: document.getElementById('xp-fill-top')
                 };
             }
             
@@ -1569,15 +1892,54 @@
             
             // Batch DOM updates
             requestAnimationFrame(() => {
-                cachedElements.hunger.style.width = hungerVal + '%';
-                cachedElements.hunger.textContent = hungerVal + '%';
+                cachedElements.hungerBar.style.width = hungerVal + '%';
+                cachedElements.hungerValue.textContent = hungerVal + '%';
                 
-                cachedElements.happiness.style.width = happinessVal + '%';
-                cachedElements.happiness.textContent = happinessVal + '%';
+                cachedElements.happinessBar.style.width = happinessVal + '%';
+                cachedElements.happinessValue.textContent = happinessVal + '%';
                 
-                cachedElements.energy.style.width = energyVal + '%';
-                cachedElements.energy.textContent = energyVal + '%';
+                cachedElements.energyBar.style.width = energyVal + '%';
+                cachedElements.energyValue.textContent = energyVal + '%';
+                
+                cachedElements.levelTop.textContent = playerLevel;
+                
+                // Update recommended action
+                updateRecommendedAction();
             });
+        }
+        
+        function updateRecommendedAction() {
+            const nextAction = document.getElementById('next-action');
+            const feedBtn = document.querySelector('.action-btn.feed');
+            const playBtn = document.querySelector('.action-btn.play');
+            const sleepBtn = document.querySelector('.action-btn.sleep');
+            
+            // Remove all recommendations
+            feedBtn.classList.remove('recommended');
+            playBtn.classList.remove('recommended');
+            sleepBtn.classList.remove('recommended');
+            
+            let message = '';
+            
+            if (stats.hunger < 30) {
+                message = '🍔 Hunger is low! Feed your pet to gain +10 XP';
+                feedBtn.classList.add('recommended');
+            } else if (stats.energy < 20) {
+                message = '😴 Energy is low! Let your pet sleep to gain +12 XP';
+                sleepBtn.classList.add('recommended');
+            } else if (stats.happiness < 30) {
+                message = '🎮 Happiness is low! Play with your pet to gain +15 XP';
+                playBtn.classList.add('recommended');
+            } else if (stats.happiness > 70 && stats.energy > 50) {
+                message = '✨ Your pet is happy! Keep playing to level up faster!';
+            }
+            
+            if (message) {
+                nextAction.textContent = message;
+                nextAction.classList.add('show');
+            } else {
+                nextAction.classList.remove('show');
+            }
         }
 
         function showMessage(text) {
@@ -1717,13 +2079,13 @@
             if (playerXP >= xpNeeded) {
                 playerXP -= xpNeeded;
                 playerLevel++;
-                document.getElementById('level').textContent = playerLevel;
+                document.getElementById('level-top').textContent = playerLevel;
                 showMessage(`🎉 Level Up! Now Level ${playerLevel}!`);
                 playAnimation('victory', 3000);
             }
             
             const xpPercent = (playerXP / xpNeeded) * 100;
-            document.getElementById('xp-fill').style.width = xpPercent + '%';
+            document.getElementById('xp-fill-top').style.width = xpPercent + '%';
         }
         
         window.nextTutorial = () => {
@@ -1779,7 +2141,7 @@
                 const nameInput = document.getElementById('name-input');
                 if (nameInput.value.trim()) {
                     playerName = nameInput.value.trim();
-                    document.getElementById('pet-name').textContent = '🐾 ' + playerName;
+                    document.getElementById('pet-name-top').textContent = '🐾 ' + playerName;
                 } else {
                     tutorialStep--;
                     showMessage('Please enter a name!');
@@ -1803,14 +2165,14 @@
             const newName = prompt('Enter new name for your pet:', playerName || 'My Pet');
             if (newName && newName.trim()) {
                 playerName = newName.trim();
-                document.getElementById('pet-name').textContent = '🐾 ' + playerName;
+                document.getElementById('pet-name-top').textContent = '🐾 ' + playerName;
             }
         };
         
         window.skipTutorial = () => {
             playSound('button');
             playerName = 'My Pet';
-            document.getElementById('pet-name').textContent = '🐾 ' + playerName;
+            document.getElementById('pet-name-top').textContent = '🐾 ' + playerName;
             document.getElementById('tutorial-modal').classList.add('hidden');
         };
 
@@ -1872,8 +2234,8 @@
                 }
                 
                 // Update UI
-                const shortAddress = userAccount.slice(0, 6) + '...' + userAccount.slice(-4);
-                document.getElementById('connect-wallet-btn').textContent = '✅ ' + shortAddress;
+                const shortAddress = userAccount.slice(0, 4) + '...' + userAccount.slice(-3);
+                document.getElementById('connect-wallet-btn').textContent = shortAddress;
                 document.getElementById('web3-section').style.display = 'block';
                 showMessage('🎉 Connected to Ritual!');
                 
@@ -1887,13 +2249,13 @@
                         provider = null;
                         signer = null;
                         contract = null;
-                        document.getElementById('connect-wallet-btn').textContent = '🦊 Connect Wallet';
+                        document.getElementById('connect-wallet-btn').textContent = '🦊';
                         document.getElementById('web3-section').style.display = 'none';
                         showMessage('👋 Wallet disconnected');
                     } else {
                         userAccount = accounts[0];
-                        const shortAddress = userAccount.slice(0, 6) + '...' + userAccount.slice(-4);
-                        document.getElementById('connect-wallet-btn').textContent = '✅ ' + shortAddress;
+                        const shortAddress = userAccount.slice(0, 4) + '...' + userAccount.slice(-3);
+                        document.getElementById('connect-wallet-btn').textContent = shortAddress;
                         checkMintedPet();
                     }
                 });
@@ -1935,7 +2297,7 @@
                     
                     // Update pet name display at top
                     playerName = petName;
-                    document.getElementById('pet-name').textContent = '🐾 ' + petName;
+                    document.getElementById('pet-name-top').textContent = '🐾 ' + petName;
                     
                     // Update mint button in settings
                     document.getElementById('mint-btn-settings').textContent = '✅ ' + petName;
@@ -1950,10 +2312,10 @@
                     playerXP = experience;
                     
                     // Update UI
-                    document.getElementById('level').textContent = playerLevel;
+                    document.getElementById('level-top').textContent = playerLevel;
                     const xpNeeded = playerLevel * 100;
                     const xpPercent = (playerXP / xpNeeded) * 100;
-                    document.getElementById('xp-fill').style.width = xpPercent + '%';
+                    document.getElementById('xp-fill-top').style.width = xpPercent + '%';
                     updateUI();
                     
                     console.log('✅ Loaded pet from blockchain:', {
@@ -2016,7 +2378,7 @@
                 
                 // Update pet name at top
                 playerName = name;
-                document.getElementById('pet-name').textContent = '🐾 ' + name;
+                document.getElementById('pet-name-top').textContent = '🐾 ' + name;
                 
                 // Update button in settings
                 document.getElementById('mint-btn-settings').textContent = '✅ ' + name;
@@ -2179,12 +2541,12 @@
                 playerXP = experience;
                 
                 // Update UI
-                document.getElementById('pet-name').textContent = '🐾 ' + playerName;
-                document.getElementById('level').textContent = playerLevel;
+                document.getElementById('pet-name-top').textContent = '🐾 ' + playerName;
+                document.getElementById('level-top').textContent = playerLevel;
                 
                 const xpNeeded = playerLevel * 100;
                 const xpPercent = (playerXP / xpNeeded) * 100;
-                document.getElementById('xp-fill').style.width = xpPercent + '%';
+                document.getElementById('xp-fill-top').style.width = xpPercent + '%';
                 
                 updateUI();
                 
@@ -2209,6 +2571,241 @@
                 }
             }
         };
+
+        // ===== PWA & SERVICE WORKER =====
+        let deferredPrompt;
+        
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(reg => console.log('✅ Service Worker registered'))
+                    .catch(err => console.log('❌ Service Worker registration failed:', err));
+            });
+        }
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // Show install prompt after 30 seconds
+            setTimeout(() => {
+                const pwaInstall = document.getElementById('pwa-install');
+                if (pwaInstall && !localStorage.getItem('pwa-dismissed')) {
+                    pwaInstall.classList.add('show');
+                }
+            }, 30000);
+        });
+        
+        window.installPWA = async () => {
+            if (!deferredPrompt) return;
+            
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            
+            if (outcome === 'accepted') {
+                console.log('✅ PWA installed');
+            }
+            
+            deferredPrompt = null;
+            document.getElementById('pwa-install').classList.remove('show');
+        };
+        
+        window.closePWA = () => {
+            document.getElementById('pwa-install').classList.remove('show');
+            localStorage.setItem('pwa-dismissed', 'true');
+        };
+        
+        // ===== DAILY QUESTS SYSTEM =====
+        let dailyQuests = {
+            feed: { current: 0, target: 3, reward: 50, icon: '🍔', title: 'Feed your pet 3 times' },
+            play: { current: 0, target: 5, reward: 75, icon: '🎮', title: 'Play with your pet 5 times' },
+            sleep: { current: 0, target: 2, reward: 40, icon: '😴', title: 'Let your pet sleep 2 times' },
+            level: { current: 0, target: 1, reward: 100, icon: '⭐', title: 'Level up once' }
+        };
+        
+        let dailyStreak = 0;
+        
+        function loadQuests() {
+            const saved = localStorage.getItem('dailyQuests');
+            const lastDate = localStorage.getItem('questsDate');
+            const today = new Date().toDateString();
+            
+            if (lastDate === today && saved) {
+                dailyQuests = JSON.parse(saved);
+            } else if (lastDate && lastDate !== today) {
+                // New day - check streak
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                if (lastDate === yesterday.toDateString()) {
+                    dailyStreak = parseInt(localStorage.getItem('dailyStreak') || '0') + 1;
+                } else {
+                    dailyStreak = 0; // Streak broken
+                }
+                localStorage.setItem('dailyStreak', dailyStreak.toString());
+                resetQuests();
+            }
+            
+            dailyStreak = parseInt(localStorage.getItem('dailyStreak') || '0');
+            updateQuestsUI();
+        }
+        
+        function resetQuests() {
+            dailyQuests = {
+                feed: { current: 0, target: 3, reward: 50, icon: '🍔', title: 'Feed your pet 3 times' },
+                play: { current: 0, target: 5, reward: 75, icon: '🎮', title: 'Play with your pet 5 times' },
+                sleep: { current: 0, target: 2, reward: 40, icon: '😴', title: 'Let your pet sleep 2 times' },
+                level: { current: 0, target: 1, reward: 100, icon: '⭐', title: 'Level up once' }
+            };
+            saveQuests();
+        }
+        
+        function saveQuests() {
+            localStorage.setItem('dailyQuests', JSON.stringify(dailyQuests));
+            localStorage.setItem('questsDate', new Date().toDateString());
+            updateQuestsUI();
+        }
+        
+        function updateQuestsUI() {
+            const questsList = document.getElementById('quests-list');
+            if (!questsList) return;
+            
+            let html = '';
+            let completedCount = 0;
+            
+            for (const [key, quest] of Object.entries(dailyQuests)) {
+                const progress = Math.min(quest.current, quest.target);
+                const percent = (progress / quest.target) * 100;
+                const completed = progress >= quest.target;
+                if (completed) completedCount++;
+                
+                html += `
+                    <div class="quest-item ${completed ? 'completed' : ''}">
+                        <div class="quest-icon">${quest.icon}</div>
+                        <div class="quest-info">
+                            <div class="quest-title">${quest.title}</div>
+                            <div class="quest-progress">${progress}/${quest.target}</div>
+                            <div class="quest-progress-bar">
+                                <div class="quest-progress-fill" style="width: ${percent}%"></div>
+                            </div>
+                        </div>
+                        <div class="quest-reward">${completed ? '✅' : '+' + quest.reward + ' XP'}</div>
+                    </div>
+                `;
+            }
+            
+            questsList.innerHTML = html;
+            document.getElementById('streak-count').textContent = dailyStreak;
+            
+            // Update badge
+            const uncompletedCount = Object.keys(dailyQuests).length - completedCount;
+            const badge = document.getElementById('quest-badge');
+            if (uncompletedCount > 0) {
+                badge.textContent = uncompletedCount;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+        
+        function completeQuest(questKey) {
+            const quest = dailyQuests[questKey];
+            if (!quest) return;
+            
+            quest.current++;
+            
+            if (quest.current === quest.target) {
+                // Quest completed!
+                addXP(quest.reward);
+                showMessage(`🎉 Quest Complete! +${quest.reward} XP`);
+                playSound('purr');
+            }
+            
+            saveQuests();
+        }
+        
+        window.toggleQuests = () => {
+            const modal = document.getElementById('quests-modal');
+            modal.classList.toggle('show');
+            playSound('button');
+            updateQuestsUI();
+        };
+        
+        // Override action functions to track quests
+        const originalFeedPet = window.feedPet;
+        window.feedPet = () => {
+            originalFeedPet();
+            completeQuest('feed');
+        };
+        
+        const originalPlayWithPet = window.playWithPet;
+        window.playWithPet = () => {
+            originalPlayWithPet();
+            completeQuest('play');
+        };
+        
+        const originalSleepPet = window.sleepPet;
+        window.sleepPet = () => {
+            originalSleepPet();
+            completeQuest('sleep');
+        };
+        
+        const originalAddXP = addXP;
+        function addXP(amount) {
+            const oldLevel = playerLevel;
+            originalAddXP(amount);
+            if (playerLevel > oldLevel) {
+                completeQuest('level');
+            }
+        }
+        
+        // Load quests on start
+        loadQuests();
+        
+        // ===== PUSH NOTIFICATIONS =====
+        async function requestNotificationPermission() {
+            if ('Notification' in window && 'serviceWorker' in navigator) {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    console.log('✅ Notification permission granted');
+                    scheduleNotifications();
+                }
+            }
+        }
+        
+        function scheduleNotifications() {
+            // Schedule notifications for when stats are low
+            setInterval(() => {
+                if (document.hidden && stats.hunger < 30) {
+                    showNotification('Your pet is hungry! 🍔', 'Feed your pet to keep it happy');
+                } else if (document.hidden && stats.energy < 20) {
+                    showNotification('Energy is low! ⚡', 'Your pet needs rest');
+                } else if (document.hidden && stats.happiness < 30) {
+                    showNotification('Your pet missed you! 🐾', 'Come play with your pet');
+                }
+            }, 300000); // Check every 5 minutes
+        }
+        
+        function showNotification(title, body) {
+            if ('serviceWorker' in navigator && 'Notification' in window) {
+                navigator.serviceWorker.ready.then(registration => {
+                    registration.showNotification(title, {
+                        body: body,
+                        icon: '/192x192.png',
+                        badge: '/192x192.png',
+                        vibrate: [200, 100, 200],
+                        data: { url: '/' }
+                    });
+                });
+            }
+        }
+        
+        // Request notification permission after 1 minute
+        setTimeout(() => {
+            if (!localStorage.getItem('notification-asked')) {
+                requestNotificationPermission();
+                localStorage.setItem('notification-asked', 'true');
+            }
+        }, 60000);
 
         init();
     </script>
