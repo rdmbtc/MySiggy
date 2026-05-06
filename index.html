@@ -2723,18 +2723,18 @@
             const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(gameUrl)}`;
             
             console.log('Opening Twitter share:', twitterUrl);
-            const twitterWindow = window.open(twitterUrl, '_blank', 'width=550,height=420');
+            const twitterWindow = window.open(twitterUrl, '_blank', 'noopener,noreferrer');
             
             if (!twitterWindow || twitterWindow.closed || typeof twitterWindow.closed === 'undefined') {
-                // Popup blocked, show message
-                console.warn('Popup blocked');
-                showMessage('⚠️ Please allow popups to share on Twitter');
-                // Try direct navigation as fallback
-                setTimeout(() => {
-                    if (confirm('Open Twitter to share?')) {
-                        window.location.href = twitterUrl;
-                    }
-                }, 100);
+                // Popup blocked - use link fallback
+                console.warn('Popup blocked, using link fallback');
+                const link = document.createElement('a');
+                link.href = twitterUrl;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             }
             
             playSound('button');
@@ -2781,17 +2781,18 @@
                 const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(gameUrl)}`;
                 
                 console.log('Opening Twitter share:', twitterUrl);
-                const twitterWindow = window.open(twitterUrl, '_blank', 'width=550,height=420');
+                const twitterWindow = window.open(twitterUrl, '_blank', 'noopener,noreferrer');
                 
                 if (!twitterWindow || twitterWindow.closed || typeof twitterWindow.closed === 'undefined') {
-                    // Popup blocked
-                    console.warn('Popup blocked');
-                    showMessage('⚠️ Please allow popups to share on Twitter');
-                    setTimeout(() => {
-                        if (confirm('Open Twitter to share?')) {
-                            window.location.href = twitterUrl;
-                        }
-                    }, 100);
+                    // Popup blocked - use link fallback
+                    console.warn('Popup blocked, using link fallback');
+                    const link = document.createElement('a');
+                    link.href = twitterUrl;
+                    link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
                 }
                 
                 playSound('button');
@@ -2812,17 +2813,18 @@
             const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(gameUrl)}`;
             
             console.log('Opening Twitter share:', twitterUrl);
-            const twitterWindow = window.open(twitterUrl, '_blank', 'width=550,height=420');
+            const twitterWindow = window.open(twitterUrl, '_blank', 'noopener,noreferrer');
             
             if (!twitterWindow || twitterWindow.closed || typeof twitterWindow.closed === 'undefined') {
-                // Popup blocked
-                console.warn('Popup blocked');
-                showMessage('⚠️ Please allow popups to share on Twitter');
-                setTimeout(() => {
-                    if (confirm('Open Twitter to share?')) {
-                        window.location.href = twitterUrl;
-                    }
-                }, 100);
+                // Popup blocked - use link fallback
+                console.warn('Popup blocked, using link fallback');
+                const link = document.createElement('a');
+                link.href = twitterUrl;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             }
             
             playSound('button');
@@ -3254,13 +3256,19 @@
             
             console.log('Opening Twitter with URL:', tweetUrl);
             
-            // Open Twitter in new window
-            const twitterWindow = window.open(tweetUrl, '_blank', 'width=550,height=420');
+            // Try to open in new window
+            const twitterWindow = window.open(tweetUrl, '_blank', 'noopener,noreferrer');
             
-            if (!twitterWindow) {
-                // Popup blocked, try direct navigation
-                console.warn('Popup blocked, trying direct navigation');
-                window.location.href = tweetUrl;
+            if (!twitterWindow || twitterWindow.closed || typeof twitterWindow.closed === 'undefined') {
+                // Popup blocked - create a temporary link and click it
+                console.warn('Popup blocked, using link fallback');
+                const link = document.createElement('a');
+                link.href = tweetUrl;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             }
             
             // Close modal after sharing
