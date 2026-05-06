@@ -6,6 +6,7 @@
     <meta name="description" content="MySiggy - Your virtual pet on Ritual blockchain. Feed, play, and level up your pet!">
     <meta name="theme-color" content="#667eea">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="MySiggy">
     <title>MySiggy - Play with your Siggy </title>
@@ -22,10 +23,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Preload critical assets -->
-    <link rel="preload" as="image" href="textures/e8ac44da4f2641a190a3b03367783ead_RGB_gltf_embedded_1.png">
-    <link rel="preload" as="fetch" href="animations/Happy Idle.fbx" crossorigin>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -1232,8 +1229,8 @@
             <h2 id="tutorial-title">Welcome!</h2>
             <p id="tutorial-text">Let's get started with your virtual pet!</p>
             <input type="text" id="name-input" placeholder="Enter your pet's name..." style="display:none;">
-            <button onclick="nextTutorial()">Next</button>
-            <button class="tutorial-skip" onclick="skipTutorial()">Skip Tutorial</button>
+            <button id="tutorial-next-btn">Next</button>
+            <button class="tutorial-skip" id="tutorial-skip-btn">Skip Tutorial</button>
         </div>
     </div>
     
@@ -2175,6 +2172,14 @@
             document.getElementById('pet-name-top').textContent = '🐾 ' + playerName;
             document.getElementById('tutorial-modal').classList.add('hidden');
         };
+        
+        // Add event listeners for tutorial buttons after DOM loads
+        setTimeout(() => {
+            const nextBtn = document.getElementById('tutorial-next-btn');
+            const skipBtn = document.getElementById('tutorial-skip-btn');
+            if (nextBtn) nextBtn.addEventListener('click', window.nextTutorial);
+            if (skipBtn) skipBtn.addEventListener('click', window.skipTutorial);
+        }, 100);
 
         window.connectWallet = async () => {
             playSound('button');
@@ -2750,13 +2755,15 @@
         };
         
         const originalAddXP = addXP;
-        function addXP(amount) {
+        
+        // Override addXP to track level ups for quests
+        addXP = function(amount) {
             const oldLevel = playerLevel;
             originalAddXP(amount);
             if (playerLevel > oldLevel) {
                 completeQuest('level');
             }
-        }
+        };
         
         // Load quests on start
         loadQuests();
