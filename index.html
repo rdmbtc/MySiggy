@@ -23,6 +23,13 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons (shadcn style) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -60,10 +67,8 @@
             z-index: 100;
             width: 100%;
             max-width: 100%;
-            background: rgba(255, 255, 255, 0.98);
-            padding: 12px 16px 20px;
-            border-radius: 24px 24px 0 0;
-            box-shadow: 0 -4px 24px rgba(0,0,0,0.15);
+            background: transparent;
+            padding: 16px 20px 24px;
         }
         
         #stats {
@@ -80,9 +85,10 @@
         }
         
         .stat-icon {
-            font-size: 24px;
-            min-width: 32px;
+            font-size: 28px;
+            min-width: 36px;
             text-align: center;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
         }
         
         .stat-info {
@@ -90,33 +96,36 @@
         }
         
         .stat-label {
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 600;
-            color: #495057;
-            margin-bottom: 4px;
+            color: rgba(255, 255, 255, 0.95);
+            margin-bottom: 6px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
         
         .stat-value {
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 700;
-            color: #495057;
+            color: rgba(255, 255, 255, 1);
+            text-shadow: 0 1px 3px rgba(0,0,0,0.2);
         }
         
         .stat-bar {
             width: 100%;
-            height: 8px;
-            background: #e9ecef;
-            border-radius: 10px;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
         }
         
         .stat-fill {
             height: 100%;
             transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
         
         .hunger { 
@@ -136,42 +145,57 @@
         }
         
         .action-btn {
-            padding: 14px 8px;
+            padding: 16px 10px;
             border: none;
-            border-radius: 16px;
+            border-radius: 20px;
             color: white;
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
             font-family: 'Poppins', sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
             position: relative;
         }
         
-        .action-btn .emoji {
-            font-size: 24px;
+        .action-btn .icon {
+            width: 28px;
+            height: 28px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
         }
         
         .action-btn .label {
-            font-size: 11px;
+            font-size: 12px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
         }
         
         .action-btn:active {
-            transform: scale(0.95);
+            transform: translateY(-2px) scale(0.98);
         }
         
         .action-btn.recommended {
             animation: pulse 2s infinite;
+            border: 2px solid rgba(255, 215, 0, 0.6);
         }
         
         @keyframes pulse {
-            0%, 100% { box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
-            50% { box-shadow: 0 4px 24px rgba(255, 215, 0, 0.6); }
+            0%, 100% { 
+                box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+                transform: scale(1);
+            }
+            50% { 
+                box-shadow: 0 8px 32px rgba(255, 215, 0, 0.4);
+                transform: scale(1.05);
+            }
         }
         
         /* Mobile responsive */
@@ -405,10 +429,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 20px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+            padding: 16px 24px;
+            background: transparent;
         }
         
         #top-bar-left {
@@ -430,88 +452,110 @@
         }
         
         #pet-name-top {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 700;
-            color: #495057;
+            color: rgba(255, 255, 255, 0.95);
+            text-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
         
         #level-info {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
         
         #level-badge {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: rgba(255, 255, 255, 0.15);
             color: white;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 12px;
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 13px;
             font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
         
         #xp-bar-top {
-            width: 80px;
-            height: 6px;
-            background: rgba(0,0,0,0.1);
-            border-radius: 10px;
+            width: 100px;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
             overflow: hidden;
         }
         
         #xp-fill-top {
             height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 10px;
+            background: linear-gradient(90deg, #ffd93d 0%, #ffb800 100%);
+            border-radius: 12px;
             transition: width 0.5s;
             width: 0%;
         }
         
         .top-btn {
-            padding: 8px 16px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 10px 18px;
+            background: rgba(255, 255, 255, 0.15);
             color: white;
             border: none;
-            border-radius: 12px;
-            font-size: 13px;
+            border-radius: 16px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s;
             font-family: 'Poppins', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .top-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
         }
         
         .top-btn:active {
-            transform: scale(0.95);
+            transform: translateY(0) scale(0.98);
+        }
+        
+        .top-btn .icon {
+            width: 20px;
+            height: 20px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
         }
         
         #settings-btn {
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             padding: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
             border-radius: 50%;
+        }
+        
+        #settings-btn .icon {
+            width: 22px;
+            height: 22px;
         }
         
         #next-action {
             position: fixed;
-            top: 70px;
+            top: 80px;
             left: 50%;
             transform: translateX(-50%);
-            background: linear-gradient(135deg, #FFD93D 0%, #FFB800 100%);
-            color: #495057;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 13px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-size: 14px;
             font-weight: 600;
-            box-shadow: 0 4px 16px rgba(255, 185, 0, 0.4);
+            box-shadow: 0 4px 24px rgba(0,0,0,0.15);
             z-index: 99;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s;
-            max-width: 80%;
+            max-width: 85%;
             text-align: center;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
         
         #next-action.show {
@@ -739,6 +783,283 @@
             text-align: center;
         }
         
+        .settings-credits {
+            text-align: center;
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 2px solid #e9ecef;
+            line-height: 1.6;
+        }
+        
+        .settings-credits a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+        
+        .settings-credits a:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+        
+        /* Leaderboard Modal */
+        #leaderboard-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10005;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        
+        #leaderboard-modal.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .leaderboard-content {
+            background: white;
+            padding: 30px 25px;
+            border-radius: 25px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .leaderboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .leaderboard-header h2 {
+            font-size: 24px;
+            color: #495057;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .close-leaderboard {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #6c757d;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+        }
+        
+        .leaderboard-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .leaderboard-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: transform 0.2s;
+        }
+        
+        .leaderboard-item:hover {
+            transform: translateX(5px);
+        }
+        
+        .leaderboard-item.current-user {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
+            border: 2px solid #ffc107;
+        }
+        
+        .leaderboard-rank {
+            font-size: 20px;
+            font-weight: 700;
+            color: #495057;
+            min-width: 40px;
+            text-align: center;
+        }
+        
+        .leaderboard-rank.top-1 {
+            color: #FFD700;
+            font-size: 24px;
+        }
+        
+        .leaderboard-rank.top-2 {
+            color: #C0C0C0;
+            font-size: 22px;
+        }
+        
+        .leaderboard-rank.top-3 {
+            color: #CD7F32;
+            font-size: 22px;
+        }
+        
+        .leaderboard-info {
+            flex: 1;
+        }
+        
+        .leaderboard-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #495057;
+            margin-bottom: 4px;
+        }
+        
+        .leaderboard-address {
+            font-size: 11px;
+            color: #6c757d;
+            font-family: monospace;
+        }
+        
+        .leaderboard-stats {
+            text-align: right;
+        }
+        
+        .leaderboard-level {
+            font-size: 18px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 2px;
+        }
+        
+        .leaderboard-xp {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .leaderboard-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6c757d;
+        }
+        
+        .leaderboard-empty-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        
+        .leaderboard-loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6c757d;
+        }
+        
+        .leaderboard-submit {
+            margin-top: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .leaderboard-submit:hover {
+            transform: translateY(-2px);
+        }
+        
+        .leaderboard-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Social Share Buttons */
+        .social-share-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #e9ecef;
+        }
+        
+        .social-share-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        
+        .social-share-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .social-share-btn {
+            flex: 1;
+            min-width: 140px;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #1DA1F2 0%, #0d8bd9 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-family: 'Poppins', sans-serif;
+            box-shadow: 0 4px 12px rgba(29, 161, 242, 0.3);
+        }
+        
+        .social-share-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(29, 161, 242, 0.4);
+        }
+        
+        .social-share-btn:active {
+            transform: translateY(0);
+        }
+        
+        .social-share-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+        
+        .share-level-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .share-level-btn:hover {
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+        
+        .share-rank-btn {
+            background: linear-gradient(135deg, #FFD93D 0%, #FFB800 100%);
+            box-shadow: 0 4px 12px rgba(255, 217, 61, 0.3);
+        }
+        
+        .share-rank-btn:hover {
+            box-shadow: 0 6px 16px rgba(255, 217, 61, 0.4);
+        }
+        
         .volume-control {
             margin-bottom: 25px;
         }
@@ -800,43 +1121,7 @@
         }
         
         #credits {
-            position: fixed;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 50;
-            text-align: center;
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.8);
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            pointer-events: none;
-        }
-        
-        #credits a {
-            color: rgba(255, 255, 255, 0.9);
-            text-decoration: none;
-            font-weight: 600;
-            pointer-events: all;
-            transition: color 0.2s;
-        }
-        
-        #credits a:hover {
-            color: #fff;
-            text-decoration: underline;
-        }
-        
-        @media (max-width: 768px) {
-            #credits {
-                font-size: 9px;
-                bottom: 8px;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            #credits {
-                font-size: 8px;
-                bottom: 5px;
-            }
+            display: none;
         }
         
         #status-message {
@@ -1144,11 +1429,18 @@
         </div>
         <div id="top-bar-right">
             <button id="quests-btn" class="top-btn" onclick="toggleQuests()">
-                🎯
+                <i data-lucide="trophy" class="icon"></i>
                 <span class="quest-badge" id="quest-badge" style="display:none;">0</span>
             </button>
-            <button id="settings-btn" class="top-btn" onclick="toggleSettings()">⚙️</button>
-            <button id="connect-wallet-btn" class="top-btn" onclick="connectWallet()">🦊</button>
+            <button id="leaderboard-btn" class="top-btn" onclick="toggleLeaderboard()">
+                <i data-lucide="award" class="icon"></i>
+            </button>
+            <button id="settings-btn" class="top-btn" onclick="toggleSettings()">
+                <i data-lucide="settings" class="icon"></i>
+            </button>
+            <button id="connect-wallet-btn" class="top-btn" onclick="connectWallet()">
+                <i data-lucide="wallet" class="icon"></i>
+            </button>
         </div>
     </div>
     
@@ -1218,7 +1510,26 @@
                 <input type="range" min="0" max="100" value="70" class="volume-slider" id="sfx-volume" oninput="updateSFXVolume(this.value)">
             </div>
             
+            <!-- Social Share Section -->
+            <div class="social-share-section">
+                <div class="social-share-title">📢 Share on Twitter</div>
+                <div class="social-share-buttons">
+                    <button class="social-share-btn" onclick="shareLevel()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                        Share Progress
+                    </button>
+                </div>
+            </div>
+            
             <button onclick="toggleSettings()">Close</button>
+            
+            <div class="settings-credits">
+                Made with ❤️ by <a href="https://twitter.com/rdmnad" target="_blank">@rdmnad</a><br>
+                Discord: <a href="https://discord.com/users/therdm" target="_blank">@therdm</a><br>
+                Special for <a href="https://ritual.net" target="_blank">Ritual Community</a> 🔮
+            </div>
         </div>
     </div>
     
@@ -1247,6 +1558,45 @@
                 Share on X
             </button>
             <button class="close-share-btn" onclick="closeTwitterModal()">Maybe Later</button>
+        </div>
+    </div>
+    
+    <!-- Leaderboard Modal -->
+    <div id="leaderboard-modal">
+        <div class="leaderboard-content">
+            <div class="leaderboard-header">
+                <h2>🏆 Top 100 Players</h2>
+                <button class="close-leaderboard" onclick="toggleLeaderboard()">×</button>
+            </div>
+            
+            <div id="leaderboard-list" class="leaderboard-list">
+                <div class="leaderboard-loading">
+                    <div style="font-size: 32px; margin-bottom: 10px;">⏳</div>
+                    <div>Loading leaderboard...</div>
+                </div>
+            </div>
+            
+            <button id="submit-score-btn" class="leaderboard-submit" onclick="submitToLeaderboard()" style="display:none;">
+                📊 Submit My Score
+            </button>
+            
+            <div class="social-share-section" id="social-share-section" style="display:none;">
+                <div class="social-share-title">📢 Share Your Progress</div>
+                <div class="social-share-buttons">
+                    <button class="social-share-btn share-level-btn" onclick="shareLevel()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                        Share Level
+                    </button>
+                    <button class="social-share-btn share-rank-btn" onclick="shareRank()" id="share-rank-btn" style="display:none;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                        Share Rank
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
     
@@ -1291,19 +1641,19 @@
         </div>
         <div id="actions">
             <button class="action-btn feed" onclick="feedPet()">
-                <span class="emoji">🍔</span>
+                <i data-lucide="utensils" class="icon"></i>
                 <span class="label">Feed</span>
             </button>
             <button class="action-btn play" onclick="playWithPet()">
-                <span class="emoji">🎮</span>
+                <i data-lucide="gamepad-2" class="icon"></i>
                 <span class="label">Play</span>
             </button>
             <button class="action-btn sleep" onclick="sleepPet()">
-                <span class="emoji">😴</span>
+                <i data-lucide="moon" class="icon"></i>
                 <span class="label">Sleep</span>
             </button>
             <button class="action-btn dance" onclick="dancePet()">
-                <span class="emoji">💃</span>
+                <i data-lucide="music" class="icon"></i>
                 <span class="label">Dance</span>
             </button>
         </div>
@@ -1329,6 +1679,12 @@
     <script type="module">
         import * as THREE from 'three';
         import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://wmgdkgzrhgmdkcblcqdn.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndtZ2RrZ3pyaGdtZGtjYmxjcWRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNDI2MTcsImV4cCI6MjA5MzYxODYxN30.isdMSxsnQkQcIrtEo86NbqbZkskbuBp_tmWtPRnzXaA';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let scene, camera, renderer, character, mixer;
         let animations = {};
@@ -1505,6 +1861,11 @@
             initAudio();
             setupInteraction();
             loadCharacter();
+            
+            // Initialize Lucide icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
         }
         
         function setupInteraction() {
@@ -2079,6 +2440,15 @@
                 document.getElementById('level-top').textContent = playerLevel;
                 showMessage(`🎉 Level Up! Now Level ${playerLevel}!`);
                 playAnimation('victory', 3000);
+                
+                // Show share prompt for milestone levels
+                if (playerLevel % 5 === 0) {
+                    setTimeout(() => {
+                        if (confirm(`🎉 Congrats on Level ${playerLevel}! Share on Twitter?`)) {
+                            shareAchievement(`Just reached Level ${playerLevel}`);
+                        }
+                    }, 3000);
+                }
             }
             
             const xpPercent = (playerXP / xpNeeded) * 100;
@@ -2172,6 +2542,226 @@
             document.getElementById('pet-name-top').textContent = '🐾 ' + playerName;
             document.getElementById('tutorial-modal').classList.add('hidden');
         };
+        
+        // Leaderboard Functions
+        window.toggleLeaderboard = async () => {
+            const modal = document.getElementById('leaderboard-modal');
+            modal.classList.toggle('show');
+            playSound('button');
+            
+            if (modal.classList.contains('show')) {
+                await loadLeaderboard();
+            }
+        };
+        
+        async function loadLeaderboard() {
+            const listEl = document.getElementById('leaderboard-list');
+            listEl.innerHTML = '<div class="leaderboard-loading"><div style="font-size: 32px; margin-bottom: 10px;">⏳</div><div>Loading leaderboard...</div></div>';
+            
+            try {
+                // Fetch top 100 players ordered by level DESC, then XP DESC
+                const { data, error } = await supabase
+                    .from('leaderboard')
+                    .select('*')
+                    .order('level', { ascending: false })
+                    .order('xp', { ascending: false })
+                    .limit(100);
+                
+                if (error) throw error;
+                
+                if (!data || data.length === 0) {
+                    listEl.innerHTML = '<div class="leaderboard-empty"><div class="leaderboard-empty-icon">🏆</div><div>No players yet. Be the first!</div></div>';
+                    document.getElementById('submit-score-btn').style.display = 'block';
+                    return;
+                }
+                
+                // Render leaderboard
+                listEl.innerHTML = data.map((player, index) => {
+                    const rank = index + 1;
+                    const isCurrentUser = userAccount && player.wallet_address.toLowerCase() === userAccount.toLowerCase();
+                    
+                    let rankClass = '';
+                    let rankEmoji = `#${rank}`;
+                    if (rank === 1) {
+                        rankClass = 'top-1';
+                        rankEmoji = '🥇';
+                    } else if (rank === 2) {
+                        rankClass = 'top-2';
+                        rankEmoji = '🥈';
+                    } else if (rank === 3) {
+                        rankClass = 'top-3';
+                        rankEmoji = '🥉';
+                    }
+                    
+                    return `
+                        <div class="leaderboard-item ${isCurrentUser ? 'current-user' : ''}">
+                            <div class="leaderboard-rank ${rankClass}">${rankEmoji}</div>
+                            <div class="leaderboard-info">
+                                <div class="leaderboard-name">${player.pet_name}</div>
+                                <div class="leaderboard-address">${player.wallet_address.slice(0, 6)}...${player.wallet_address.slice(-4)}</div>
+                            </div>
+                            <div class="leaderboard-stats">
+                                <div class="leaderboard-level">Lvl ${player.level}</div>
+                                <div class="leaderboard-xp">${player.xp} XP</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                // Show submit button if user is connected
+                if (userAccount) {
+                    document.getElementById('submit-score-btn').style.display = 'block';
+                    document.getElementById('social-share-section').style.display = 'block';
+                    
+                    // Check if user is in leaderboard to show rank share button
+                    const userInLeaderboard = data.find(p => p.wallet_address.toLowerCase() === userAccount.toLowerCase());
+                    if (userInLeaderboard) {
+                        document.getElementById('share-rank-btn').style.display = 'flex';
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Leaderboard error:', error);
+                listEl.innerHTML = '<div class="leaderboard-empty"><div class="leaderboard-empty-icon">❌</div><div>Failed to load leaderboard</div></div>';
+            }
+        }
+        
+        // Social Share Functions
+        window.shareLevel = () => {
+            const gameUrl = 'https://my-siggy.vercel.app';
+            const petNameText = playerName || 'My Pet';
+            const text = `🎮 I just reached Level ${playerLevel} with ${petNameText} in MySiggy! 🐾\n\n` +
+                        `Can you beat my score? Play now! 👇\n\n` +
+                        `Thanks @rdmnad for this awesome game! 🔮`;
+            
+            const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(gameUrl)}`;
+            window.open(twitterUrl, '_blank', 'width=550,height=420');
+            playSound('button');
+        };
+        
+        window.shareRank = async () => {
+            if (!userAccount) {
+                showMessage('❌ Please connect wallet first!');
+                return;
+            }
+            
+            try {
+                // Get user's rank
+                const { data, error } = await supabase
+                    .from('leaderboard')
+                    .select('*')
+                    .order('level', { ascending: false })
+                    .order('xp', { ascending: false })
+                    .limit(100);
+                
+                if (error) throw error;
+                
+                const userIndex = data.findIndex(p => p.wallet_address.toLowerCase() === userAccount.toLowerCase());
+                
+                if (userIndex === -1) {
+                    showMessage('❌ Submit your score first!');
+                    return;
+                }
+                
+                const rank = userIndex + 1;
+                const gameUrl = 'https://my-siggy.vercel.app';
+                const petNameText = playerName || 'My Pet';
+                
+                let rankEmoji = '🏆';
+                if (rank === 1) rankEmoji = '🥇';
+                else if (rank === 2) rankEmoji = '🥈';
+                else if (rank === 3) rankEmoji = '🥉';
+                
+                const text = `${rankEmoji} I'm ranked #${rank} in MySiggy leaderboard! 🎮\n\n` +
+                            `${petNameText} - Level ${playerLevel} | ${playerXP} XP\n\n` +
+                            `Think you can beat me? 👇\n\n` +
+                            `Thanks @rdmnad! 🔮`;
+                
+                const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(gameUrl)}`;
+                window.open(twitterUrl, '_blank', 'width=550,height=420');
+                playSound('button');
+                
+            } catch (error) {
+                console.error('Share rank error:', error);
+                showMessage('❌ Failed to get rank');
+            }
+        };
+        
+        window.shareAchievement = (achievement) => {
+            const gameUrl = 'https://my-siggy.vercel.app';
+            const petNameText = playerName || 'My Pet';
+            const text = `🎉 ${achievement} with ${petNameText} in MySiggy! 🐾\n\n` +
+                        `Join me in this awesome game! 👇\n\n` +
+                        `Thanks @rdmnad! 🔮`;
+            
+            const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(gameUrl)}`;
+            window.open(twitterUrl, '_blank', 'width=550,height=420');
+            playSound('button');
+        };
+        
+        window.submitToLeaderboard = async () => {
+            if (!userAccount) {
+                showMessage('❌ Please connect wallet first!');
+                return;
+            }
+            
+            if (!playerName || playerName === 'My Pet') {
+                showMessage('❌ Please set a pet name first!');
+                return;
+            }
+            
+            playSound('button');
+            
+            try {
+                showMessage('⏳ Submitting score...');
+                
+                // Upsert (insert or update) player score
+                const { data, error } = await supabase
+                    .from('leaderboard')
+                    .upsert({
+                        wallet_address: userAccount.toLowerCase(),
+                        pet_name: playerName,
+                        level: playerLevel,
+                        xp: playerXP,
+                        updated_at: new Date().toISOString()
+                    }, {
+                        onConflict: 'wallet_address'
+                    });
+                
+                if (error) throw error;
+                
+                showMessage('✅ Score submitted!');
+                playAnimation('victory', 3000);
+                
+                // Reload leaderboard
+                await loadLeaderboard();
+                
+            } catch (error) {
+                console.error('Submit score error:', error);
+                showMessage('❌ Failed to submit score');
+            }
+        };
+        
+        // Subscribe to real-time leaderboard updates
+        function subscribeToLeaderboard() {
+            supabase
+                .channel('leaderboard-changes')
+                .on('postgres_changes', 
+                    { event: '*', schema: 'public', table: 'leaderboard' },
+                    (payload) => {
+                        console.log('Leaderboard updated:', payload);
+                        // Reload leaderboard if modal is open
+                        const modal = document.getElementById('leaderboard-modal');
+                        if (modal && modal.classList.contains('show')) {
+                            loadLeaderboard();
+                        }
+                    }
+                )
+                .subscribe();
+        }
+        
+        // Initialize real-time subscription
+        subscribeToLeaderboard();
         
         // Add event listeners for tutorial buttons after DOM loads
         setTimeout(() => {
@@ -2767,6 +3357,11 @@
         
         // Load quests on start
         loadQuests();
+        
+        // Initialize Lucide icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
         
         // ===== PUSH NOTIFICATIONS =====
         async function requestNotificationPermission() {
