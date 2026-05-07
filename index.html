@@ -1544,6 +1544,9 @@
             <button id="leaderboard-btn" class="top-btn" onclick="toggleLeaderboard()">
                 <i data-lucide="award" class="icon"></i>
             </button>
+            <button id="test-anim-btn" class="top-btn" onclick="toggleAnimTest()" title="Test Animations">
+                <i data-lucide="play-circle" class="icon"></i>
+            </button>
             <button id="settings-btn" class="top-btn" onclick="toggleSettings()">
                 <i data-lucide="settings" class="icon"></i>
             </button>
@@ -1709,6 +1712,35 @@
         </div>
     </div>
     
+    <!-- Animation Test Modal -->
+    <div id="anim-test-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 10000; overflow-y: auto;">
+        <div style="max-width: 1200px; margin: 20px auto; padding: 20px;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; padding: 30px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="color: white; font-size: 28px; margin: 0;">🎬 Animation Tester</h2>
+                    <button onclick="toggleAnimTest()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 32px; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; line-height: 1;">×</button>
+                </div>
+                
+                <div style="background: rgba(255,255,255,0.1); border-radius: 15px; padding: 20px; margin-bottom: 20px;">
+                    <div style="color: white; margin-bottom: 15px;">
+                        <strong>Инструкция:</strong> Нажми на любую анимацию ниже. Посмотри что показывает персонаж и скажи мне правильное название.
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; color: white; font-size: 14px;">
+                        <div><strong>Загружено:</strong> <span id="test-anim-count">0</span></div>
+                        <div><strong>Текущая:</strong> <span id="test-current-anim">-</span></div>
+                        <div><strong>Длительность:</strong> <span id="test-duration">-</span></div>
+                    </div>
+                </div>
+                
+                <input type="text" id="anim-search" placeholder="🔍 Поиск анимации..." style="width: 100%; padding: 15px; border-radius: 10px; border: none; font-size: 16px; margin-bottom: 20px;">
+                
+                <div id="anim-test-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; max-height: 60vh; overflow-y: auto; padding: 10px;">
+                    <!-- Animations will be added here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <div id="ui">
         <div id="stats">
             <div class="stat">
@@ -1787,6 +1819,7 @@
 
     <script type="module">
         import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
         // Supabase Configuration
@@ -2014,6 +2047,9 @@
         const interactiveAnims = ['boxing', 'boxing_1', 'hit_to_body_1', 'hit_to_body', 'kip_up'];
         let lastInteractionTime = 0;
 
+        // NOTE: Animation lists below are no longer used - all animations now loaded from GLB file
+        // Keeping for reference only
+        /*
         // Priority animations - load first (MINIMAL set for instant start)
         const priorityAnimations = [
             'Happy Idle.fbx',
@@ -2046,6 +2082,7 @@
             'Surprised.fbx', 'Talking (1).fbx', 'Talking.fbx', 'Thoughtful Head Shake.fbx',
             'Victory Idle.fbx', 'Victory.fbx', 'Waving.fbx', 'Crying.fbx'
         ];
+        */
 
         function updateLoadingProgress(text) {
             const progressEl = document.getElementById('loading-progress');
@@ -2060,9 +2097,13 @@
             const container = document.getElementById('canvas-container');
             camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 5000);
             
-            // FIXED CAMERA - much closer to fill screen!
-            camera.position.set(0, 450, 650);
+            // FIXED CAMERA - adjusted for GLB model
+            camera.position.set(0, 450, 300); // Ближе к персонажу
             camera.lookAt(0, 450, 0);
+            
+            // Делаем камеру глобальной для отладки
+            window.debugCamera = camera;
+            window.debugScene = scene;
 
             renderer = new THREE.WebGLRenderer({ 
                 antialias: window.devicePixelRatio <= 1, // Only on low-DPI screens
@@ -2079,13 +2120,24 @@
 
             // NO CONTROLS - fixed view only!
 
-            // Lights - optimized
-            const ambient = new THREE.AmbientLight(0xffffff, 0.9);
+            // Lights - УСИЛЕННОЕ ОСВЕЩЕНИЕ для GLB модели
+            const ambient = new THREE.AmbientLight(0xffffff, 1.5); // Увеличили с 0.9 до 1.5
             scene.add(ambient);
 
-            const light = new THREE.DirectionalLight(0xffffff, 0.5);
+            const light = new THREE.DirectionalLight(0xffffff, 1.2); // Увеличили с 0.5 до 1.2
             light.position.set(100, 200, 100);
             scene.add(light);
+            
+            // Добавляем дополнительный свет спереди
+            const frontLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            frontLight.position.set(0, 100, 200);
+            scene.add(frontLight);
+            
+            // Добавляем свет сзади для контура
+            const backLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            backLight.position.set(0, 100, -200);
+            scene.add(backLight);
+            
 
             // Add shadow plane under character
             const shadowGeometry = new THREE.CircleGeometry(80, 32);
@@ -2226,8 +2278,8 @@
         }
 
         function loadCharacter() {
-            updateLoadingProgress('Loading character model...');
-            const loader = new FBXLoader();
+            updateLoadingProgress('Loading character with animations...');
+            const loader = new GLTFLoader();
             
             // Preload texture
             const textureLoader = new THREE.TextureLoader();
@@ -2238,16 +2290,18 @@
             textureLoader.load('textures/e8ac44da4f2641a190a3b03367783ead_RGB_gltf_embedded_1.png', 
                 (texture) => {
                     loadedTexture = texture;
-                    texture.minFilter = THREE.LinearFilter; // Faster filtering
-                    texture.generateMipmaps = false; // Skip mipmaps for performance
+                    texture.minFilter = THREE.LinearFilter;
+                    texture.generateMipmaps = false;
                     textureReady = true;
-                    if (characterReady) applyTexture();
+                    // НЕ применяем - используем текстуры из GLB!
+                    // if (characterReady) applyTexture();
                 },
                 undefined,
                 (err) => {
-                    console.warn('⚠️ Texture not found, using default material');
+                    console.warn('⚠️ Texture not found, using GLB textures');
                     textureReady = true;
-                    if (characterReady) applyTexture();
+                    // НЕ применяем - используем текстуры из GLB!
+                    // if (characterReady) applyTexture();
                 }
             );
             
@@ -2259,15 +2313,17 @@
                                 map: loadedTexture,
                                 roughness: 0.8,
                                 metalness: 0.2,
-                                flatShading: false
+                                flatShading: false,
+                                side: THREE.DoubleSide // Рендерим обе стороны
                             });
                         } else {
                             // Fallback material if texture fails
                             child.material = new THREE.MeshStandardMaterial({
-                                color: 0x8B4513, // Brown color for cat
+                                color: 0xFF0000, // КРАСНЫЙ для отладки!
                                 roughness: 0.8,
                                 metalness: 0.2,
-                                flatShading: false
+                                flatShading: false,
+                                side: THREE.DoubleSide
                             });
                         }
                         child.castShadow = false;
@@ -2276,16 +2332,26 @@
                         if (child.geometry) {
                             child.geometry.computeVertexNormals();
                         }
+                        
+                        // Проверяем видимость
                     }
                 });
             }
             
-            loader.load('animations/Happy Idle.fbx', (fbx) => {
-                character = fbx;
+            loader.load('models/character-with-animations.glb', (gltf) => {
+                character = gltf.scene;
                 
-                // Scale - ENORMOUS!
-                const scaleFactor = 150;
+               
+                // Debug: show all children
+                character.traverse((child) => {
+                    if (child.isMesh) {
+                    }
+                });
+                
+                // Scale - ENORMOUS! GLB models are MUCH smaller than FBX
+                const scaleFactor = 8000; // Оптимальный масштаб
                 character.scale.set(scaleFactor, scaleFactor, scaleFactor);
+                
                 
                 // Optimize character geometry
                 character.traverse((child) => {
@@ -2301,220 +2367,85 @@
                 // Position - adjusted height!
                 const box = new THREE.Box3().setFromObject(character);
                 const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+             
+                
+                // Center the character at origin
                 character.position.x = -center.x;
-                character.position.y = -box.min.y + 185; // Lowered by 70px (was 300)
+                character.position.y = -box.min.y + 350; // Оптимальная высота
                 character.position.z = -center.z;
                 
+              
                 scene.add(character);
+               
+                
+                // Делаем персонажа глобальным для отладки
+                window.debugCharacter = character;
+              
                 characterReady = true;
                 
-                if (textureReady) applyTexture();
+                // НЕ применяем текстуры - используем те что в GLB!
+                // if (textureReady) applyTexture();
                 
                 mixer = new THREE.AnimationMixer(character);
                 
-                updateLoadingProgress('Loading animations...');
-                loadAnimations();
+                updateLoadingProgress('Loading animations from GLB...');
+                loadAnimations(gltf.animations);
+            }, 
+            (progress) => {
+                const percentage = Math.round((progress.loaded / progress.total) * 100);
+                updateLoadingProgress(`Loading GLB file... ${percentage}%`);
+            },
+            (error) => {
+                console.error('Error loading GLB:', error);
+                updateLoadingProgress('Error loading character!');
             });
         }
 
-        function loadAnimations() {
-            const loader = new FBXLoader();
-            let loaded = 0;
-            const total = priorityAnimations.length;
+        // ============================================
+        // ПРАВИЛЬНЫЙ МАППИНГ НА ОСНОВЕ РУЧНОЙ ПРОВЕРКИ
+        // angry → falling, body_block → correct, boxing → руки на землю, etc.
+        // ============================================
+        const ANIMATION_MAPPING = {
+            // Используем body_block как базовую idle (она правильная)
+            'body_block': 'happy_idle',
             
-            totalAnimationsToLoad = priorityAnimations.length + essentialAnimations.length + backgroundAnimations.length;
+            // Остальные анимации - используем как есть, без маппинга
+            // Просто берем первые несколько фреймов каждой анимации
+        };
+
+        function loadAnimations(glbAnimations) {
+            
+            totalAnimationsToLoad = glbAnimations.length;
             loadedAnimationsCount = 0;
             
-            // Load priority animations first
-            priorityAnimations.forEach((file) => {
-                const name = file.replace('.fbx', '').toLowerCase().replace(/\s+/g, '_').replace(/[(),]/g, '');
+            // Process all animations from GLB - используем как есть
+            glbAnimations.forEach((clip, index) => {
+                const glbName = clip.name.toLowerCase().replace(/\s+/g, '_').replace(/[(),]/g, '');
                 
-                // Try to load from cache first
-                getAnimationFromCache(name).then(cachedData => {
-                    if (cachedData) {
-                        // Load from cache
-                        const clip = cachedData;
-                        const action = mixer.clipAction(clip);
-                        action.setLoop(THREE.LoopRepeat);
-                        animations[name] = action;
-                        
-                        loaded++;
-                        loadedAnimationsCount++;
-                        updateLoadingProgress(`Loading core animations... ${loaded}/${total}`);
-                        
-                        if (loaded === 1) {
-                            playIdleAnimation();
-                        }
-                        
-                        if (loaded === total) {
-                            setTimeout(() => {
-                                document.getElementById('loading').classList.add('hidden');
-                                playIdleAnimation();
-                                startGame();
-                                loadEssentialAnimations();
-                            }, 200);
-                        }
-                    } else {
-                        // Load from network
-                        loader.load('animations/' + file, (fbx) => {
-                            if (fbx.animations && fbx.animations.length > 0) {
-                                const clip = fbx.animations[0];
-                                const action = mixer.clipAction(clip);
-                                action.setLoop(THREE.LoopRepeat);
-                                animations[name] = action;
-                                
-                                // Cache the animation
-                                saveAnimationToCache(name, clip);
-                                
-                                loaded++;
-                                loadedAnimationsCount++;
-                                updateLoadingProgress(`Loading core animations... ${loaded}/${total}`);
-                                
-                                if (loaded === 1) {
-                                    playIdleAnimation();
-                                }
-                                
-                                if (loaded === total) {
-                                    setTimeout(() => {
-                                        document.getElementById('loading').classList.add('hidden');
-                                        playIdleAnimation();
-                                        startGame();
-                                        loadEssentialAnimations();
-                                    }, 200);
-                                }
-                            }
-                        }, undefined, () => {
-                            loaded++;
-                            loadedAnimationsCount++;
-                            updateLoadingProgress(`Loading core animations... ${loaded}/${total}`);
-                            if (loaded === total) {
-                                setTimeout(() => {
-                                    document.getElementById('loading').classList.add('hidden');
-                                    playIdleAnimation();
-                                    startGame();
-                                    loadEssentialAnimations();
-                                }, 200);
-                            }
-                        });
-                    }
-                });
+                // Используем GLB имена напрямую (они уже правильные из FBX файлов)
+                const finalName = glbName;
+                
+                const action = mixer.clipAction(clip);
+                action.setLoop(THREE.LoopRepeat);
+                animations[finalName] = action;
+                
+                loadedAnimationsCount++;
+                updateLoadingProgress(`Processing animations... ${loadedAnimationsCount}/${totalAnimationsToLoad}`);
+                
             });
-        }
-        
-        function loadEssentialAnimations() {
-            // Load essential animations for basic gameplay
-            const loader = new FBXLoader();
-            let loaded = 0;
             
-            essentialAnimations.forEach((file) => {
-                const name = file.replace('.fbx', '').toLowerCase().replace(/\s+/g, '_').replace(/[(),]/g, '');
+            // Hide loading screen and start game
+            setTimeout(() => {
+                document.getElementById('loading').classList.add('hidden');
+                playIdleAnimation();
+                startGame();
                 
-                // Try cache first
-                getAnimationFromCache(name).then(cachedData => {
-                    if (cachedData) {
-                        const clip = cachedData;
-                        const action = mixer.clipAction(clip);
-                        action.setLoop(THREE.LoopRepeat);
-                        animations[name] = action;
-                        
-                        loaded++;
-                        loadedAnimationsCount++;
-                        if (loaded === essentialAnimations.length) {
-                            setTimeout(() => loadBackgroundAnimations(), 1000);
-                        }
-                    } else {
-                        loader.load('animations/' + file, (fbx) => {
-                            if (fbx.animations && fbx.animations.length > 0) {
-                                const clip = fbx.animations[0];
-                                const action = mixer.clipAction(clip);
-                                action.setLoop(THREE.LoopRepeat);
-                                animations[name] = action;
-                                
-                                saveAnimationToCache(name, clip);
-                                
-                                loaded++;
-                                loadedAnimationsCount++;
-                                if (loaded === essentialAnimations.length) {
-                                    setTimeout(() => loadBackgroundAnimations(), 1000);
-                                }
-                            }
-                        }, undefined, () => {
-                            loaded++;
-                            loadedAnimationsCount++;
-                            if (loaded === essentialAnimations.length) {
-                                setTimeout(() => loadBackgroundAnimations(), 1000);
-                            }
-                        });
-                    }
-                });
-            });
+                window.debugAnimations = animations;
+              
+            }, 200);
         }
         
-        function loadBackgroundAnimations() {
-            // Delay background loading to prioritize gameplay
-            setTimeout(() => {
-                const loader = new FBXLoader();
-                let loaded = 0;
-                let batchIndex = 0;
-                const batchSize = 5;
-                
-                function loadBatch() {
-                    const start = batchIndex * batchSize;
-                    const end = Math.min(start + batchSize, backgroundAnimations.length);
-                    
-                    if (start >= backgroundAnimations.length) {
-                        return;
-                    }
-                    
-                    for (let i = start; i < end; i++) {
-                        const file = backgroundAnimations[i];
-                        const name = file.replace('.fbx', '').toLowerCase().replace(/\s+/g, '_').replace(/[(),]/g, '');
-                        
-                        // Try cache first
-                        getAnimationFromCache(name).then(cachedData => {
-                            if (cachedData) {
-                                const clip = cachedData;
-                                const action = mixer.clipAction(clip);
-                                action.setLoop(THREE.LoopRepeat);
-                                animations[name] = action;
-                                
-                                loaded++;
-                                loadedAnimationsCount++;
-                                if (loaded % 10 === 0) {
-                                    console.log(`📦 Background loading: ${loaded}/${backgroundAnimations.length}`);
-                                }
-                            } else {
-                                loader.load('animations/' + file, (fbx) => {
-                                    if (fbx.animations && fbx.animations.length > 0) {
-                                        const clip = fbx.animations[0];
-                                        const action = mixer.clipAction(clip);
-                                        action.setLoop(THREE.LoopRepeat);
-                                        animations[name] = action;
-                                        
-                                        saveAnimationToCache(name, clip);
-                                        
-                                        loaded++;
-                                        loadedAnimationsCount++;
-                                        if (loaded % 10 === 0) {
-                                            console.log(`📦 Background loading: ${loaded}/${backgroundAnimations.length}`);
-                                        }
-                                    }
-                                }, undefined, () => {
-                                    loaded++;
-                                    loadedAnimationsCount++;
-                                });
-                            }
-                        });
-                    }
-                    
-                    batchIndex++;
-                    setTimeout(loadBatch, 300);
-                }
-                
-                loadBatch();
-            }, 500);
-        }
-
         function playAnimation(name, duration = 0) {
             if (!animations[name]) return;
             
@@ -2540,17 +2471,24 @@
         }
         
         function playIdleAnimation() {
-            if (!animations.happy_idle) return;
+            const idleOptions = ['happy_idle', 'breathing_idle', 'sitting_idle'];
             
-            if (currentAction) {
-                currentAction.fadeOut(0.5);
+            for (const animName of idleOptions) {
+                if (animations[animName]) {
+                    if (currentAction) {
+                        currentAction.fadeOut(0.5);
+                    }
+                    
+                    currentAction = animations[animName];
+                    currentAction.reset();
+                    currentAction.fadeIn(0.5);
+                    currentAction.setLoop(THREE.LoopRepeat);
+                    currentAction.play();
+                    return;
+                }
             }
             
-            currentAction = animations.happy_idle;
-            currentAction.reset();
-            currentAction.fadeIn(0.5);
-            currentAction.setLoop(THREE.LoopRepeat);
-            currentAction.play();
+            console.warn('⚠️ No idle animation found');
         }
 
         const clock = new THREE.Clock();
@@ -2681,8 +2619,8 @@
                 
                 // Auto animations based on stats (throttled)
                 if (Math.random() > 0.7) { // Only 30% chance to trigger
-                    if (stats.hunger < 20 && animations.crying && !isAnimating) {
-                        playAnimation('crying', 3000);
+                    if (stats.hunger < 20 && animations.waving && !isAnimating) {
+                        playAnimation('waving', 3000);
                     } else if (stats.energy < 15 && animations.yawn && !isAnimating) {
                         playAnimation('yawn', 2000);
                     } else if (stats.happiness < 20 && animations.sad_idle && !isAnimating) {
@@ -2695,7 +2633,7 @@
         }
 
         window.feedPet = () => {
-            if (isAnimating) return; // Block if animating
+            if (isAnimating) return;
             
             playSound('button');
             playRandomMeow();
@@ -2705,14 +2643,16 @@
             updateUI();
             addXP(10);
             
-            const feedAnims = ['drinking', 'standing_thumbs_up', 'excited'];
+            const feedAnims = ['drinking', 'excited'];
             const randomAnim = feedAnims[Math.floor(Math.random() * feedAnims.length)];
-            playAnimation(randomAnim, 3000);
+            if (animations[randomAnim]) {
+                playAnimation(randomAnim, 3000);
+            }
             showMessage('😋 Yummy! +10 XP');
         };
 
         window.playWithPet = () => {
-            if (isAnimating) return; // Block if animating
+            if (isAnimating) return;
             
             playSound('button');
             playSound('cute');
@@ -2722,14 +2662,16 @@
             updateUI();
             addXP(15);
             
-            const playAnims = ['dancing', 'silly_dancing', 'dancing_twerk', 'northern_soul_dance', 'laughing'];
+            const playAnims = ['dancing', 'silly_dancing', 'laughing', 'excited'];
             const randomAnim = playAnims[Math.floor(Math.random() * playAnims.length)];
-            playAnimation(randomAnim, 5000);
+            if (animations[randomAnim]) {
+                playAnimation(randomAnim, 5000);
+            }
             showMessage('🎉 So fun! +15 XP');
         };
 
         window.sleepPet = () => {
-            if (isAnimating) return; // Block if animating
+            if (isAnimating) return;
             
             playSound('button');
             playSound('purr');
@@ -2740,10 +2682,15 @@
             addXP(12);
             
             isAnimating = true;
-            playAnimation('laying_sleeping', 0);
+            const sleepAnim = animations['sleeping_idle'] || animations['laying_sleeping'];
+            if (sleepAnim) {
+                playAnimation(sleepAnim.getClip().name.toLowerCase().replace(/\s+/g, '_').replace(/[(),]/g, ''), 0);
+            }
             showMessage('😴 Zzz... +12 XP');
             setTimeout(() => {
-                playAnimation('getting_up', 0);
+                if (animations['getting_up']) {
+                    playAnimation('getting_up', 0);
+                }
                 setTimeout(() => {
                     playIdleAnimation();
                     isAnimating = false;
@@ -2752,7 +2699,7 @@
         };
 
         window.dancePet = () => {
-            if (isAnimating) return; // Block if animating
+            if (isAnimating) return;
             
             playSound('button');
             playRandomMeow();
@@ -2762,9 +2709,11 @@
             updateUI();
             addXP(20);
             
-            const danceAnims = ['dancing_maraschino_step', 'dancing_running_man', 'northern_soul_floor_combo', 'victory'];
+            const danceAnims = ['dancing', 'dancing_maraschino_step', 'silly_dancing', 'northern_soul_dance'];
             const randomAnim = danceAnims[Math.floor(Math.random() * danceAnims.length)];
-            playAnimation(randomAnim, 5000);
+            if (animations[randomAnim]) {
+                playAnimation(randomAnim, 5000);
+            }
             showMessage('💃 Dance time! +20 XP');
         };
         
@@ -2773,6 +2722,109 @@
             modal.classList.toggle('show');
             playSound('button');
         };
+        
+        // Animation Test Panel Functions
+        window.toggleAnimTest = () => {
+            const modal = document.getElementById('anim-test-modal');
+            const isVisible = modal.style.display !== 'none';
+            
+            if (isVisible) {
+                modal.style.display = 'none';
+            } else {
+                modal.style.display = 'block';
+                populateAnimationList();
+            }
+            playSound('button');
+        };
+        
+        function populateAnimationList() {
+            const listContainer = document.getElementById('anim-test-list');
+            const allAnims = Object.keys(animations).sort();
+            
+            document.getElementById('test-anim-count').textContent = allAnims.length;
+            
+            listContainer.innerHTML = '';
+            
+            allAnims.forEach((animName, index) => {
+                const action = animations[animName];
+                const clip = action.getClip();
+                const duration = clip.duration;
+                
+                const button = document.createElement('button');
+                button.style.cssText = `
+                    background: rgba(255,255,255,0.1);
+                    border: 2px solid rgba(255,255,255,0.3);
+                    color: white;
+                    padding: 15px;
+                    border-radius: 10px;
+                    cursor: pointer;
+                    text-align: left;
+                    transition: all 0.3s;
+                    font-size: 14px;
+                `;
+                
+                button.innerHTML = `
+                    <div style="font-weight: bold; margin-bottom: 5px;">${index + 1}. ${animName}</div>
+                    <div style="font-size: 12px; opacity: 0.8;">${duration.toFixed(2)}s (${Math.round(duration * 30)} frames)</div>
+                `;
+                
+                button.onmouseover = () => {
+                    button.style.background = 'rgba(255,255,255,0.2)';
+                    button.style.borderColor = '#00ff00';
+                    button.style.transform = 'scale(1.05)';
+                };
+                
+                button.onmouseout = () => {
+                    button.style.background = 'rgba(255,255,255,0.1)';
+                    button.style.borderColor = 'rgba(255,255,255,0.3)';
+                    button.style.transform = 'scale(1)';
+                };
+                
+                button.onclick = () => {
+                    testPlayAnimation(animName, duration);
+                    
+                    // Highlight active button
+                    document.querySelectorAll('#anim-test-list button').forEach(btn => {
+                        btn.style.background = 'rgba(255,255,255,0.1)';
+                        btn.style.borderColor = 'rgba(255,255,255,0.3)';
+                    });
+                    button.style.background = '#00ff00';
+                    button.style.borderColor = '#00ff00';
+                    button.style.color = '#000';
+                };
+                
+                listContainer.appendChild(button);
+            });
+            
+            // Search functionality
+            document.getElementById('anim-search').oninput = (e) => {
+                const query = e.target.value.toLowerCase();
+                const buttons = listContainer.querySelectorAll('button');
+                
+                buttons.forEach(btn => {
+                    const text = btn.textContent.toLowerCase();
+                    btn.style.display = text.includes(query) ? 'block' : 'none';
+                });
+            };
+        }
+        
+        function testPlayAnimation(name, duration) {
+            if (!animations[name]) return;
+            
+            if (currentAction) {
+                currentAction.fadeOut(0.3);
+            }
+            
+            currentAction = animations[name];
+            currentAction.reset();
+            currentAction.fadeIn(0.3);
+            currentAction.setLoop(THREE.LoopRepeat);
+            currentAction.play();
+            
+            document.getElementById('test-current-anim').textContent = name;
+            document.getElementById('test-duration').textContent = duration.toFixed(2) + 's';
+            
+        }
         
         window.updateMusicVolume = (value) => {
             musicVolume = value / 100;
@@ -3156,7 +3208,6 @@
             if (!playerName || playerName === 'My Pet') return;
             
             try {
-                console.log('🔄 Auto-submitting score to leaderboard...');
                 
                 // Upsert (insert or update) player score
                 const { data, error } = await supabase
@@ -3173,7 +3224,6 @@
                 
                 if (error) throw error;
                 
-                console.log('✅ Score auto-submitted successfully');
                 
             } catch (error) {
                 console.error('Auto-submit error:', error);
@@ -3195,7 +3245,6 @@
                 .on('postgres_changes', 
                     { event: '*', schema: 'public', table: 'leaderboard' },
                     (payload) => {
-                        console.log('Leaderboard updated:', payload);
                         // Reload leaderboard if modal is open
                         const modal = document.getElementById('leaderboard-modal');
                         if (modal && modal.classList.contains('show')) {
@@ -3531,7 +3580,6 @@
             const tweetText = `Just minted my Siggy ${petName}! 🐾✨\n\nThis is so cool! Thanks @rdmnad for building this 🔥`;
             const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(gameUrl)}`;
             
-            console.log('Opening Twitter with URL:', tweetUrl);
             
             // Try to open in new window
             const twitterWindow = window.open(tweetUrl, '_blank', 'noopener,noreferrer');
@@ -3609,14 +3657,7 @@
                 showMessage('✅ Loaded ' + playerName + ' from blockchain!');
                 playSound('purr');
                 
-                console.log('Loaded pet:', {
-                    name: playerName,
-                    hunger: stats.hunger,
-                    happiness: stats.happiness,
-                    energy: stats.energy,
-                    level: playerLevel,
-                    xp: playerXP
-                });
+                
                 
             } catch (error) {
                 console.error('Load error:', error);
@@ -3634,8 +3675,6 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/service-worker.js')
-                    .then(reg => console.log('✅ Service Worker registered'))
-                    .catch(err => console.log('❌ Service Worker registration failed:', err));
             });
         }
         
@@ -3659,7 +3698,6 @@
             const { outcome } = await deferredPrompt.userChoice;
             
             if (outcome === 'accepted') {
-                console.log('✅ PWA installed');
             }
             
             deferredPrompt = null;
@@ -3829,7 +3867,6 @@
             if ('Notification' in window && 'serviceWorker' in navigator) {
                 const permission = await Notification.requestPermission();
                 if (permission === 'granted') {
-                    console.log('✅ Notification permission granted');
                     scheduleNotifications();
                 }
             }
@@ -3872,5 +3909,97 @@
 
         init();
     </script>
+    
+    <!-- Evolution Notification -->
+    <div id="evolution-notification" class="evolution-notification hidden">
+        <div class="evolution-content">
+            <div class="evolution-icon">✨</div>
+            <div class="evolution-text">
+                <div class="evolution-title">Evolution!</div>
+                <div class="evolution-stage"></div>
+            </div>
+        </div>
+    </div>
+    
+    <style>
+        .evolution-notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            z-index: 10001;
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        
+        .evolution-notification.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: translate(-50%, -50%) scale(0);
+        }
+        
+        .evolution-notification:not(.hidden) {
+            animation: evolutionPop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        @keyframes evolutionPop {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+        
+        .evolution-content {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            color: white;
+        }
+        
+        .evolution-icon {
+            font-size: 3rem;
+            animation: sparkle 1s infinite;
+        }
+        
+        @keyframes sparkle {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.2) rotate(180deg); }
+        }
+        
+        .evolution-text {
+            text-align: left;
+        }
+        
+        .evolution-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .evolution-stage {
+            font-size: 1.2rem;
+            font-weight: 600;
+            opacity: 0.9;
+        }
+        
+        @media (max-width: 480px) {
+            .evolution-notification {
+                padding: 1.5rem;
+            }
+            
+            .evolution-icon {
+                font-size: 2.5rem;
+            }
+            
+            .evolution-title {
+                font-size: 1.2rem;
+            }
+            
+            .evolution-stage {
+                font-size: 1rem;
+            }
+        }
+    </style>
 </body>
 </html>

@@ -1,12 +1,23 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EvolutionManager } from './evolution.js';
 
 // Game variables
 let scene, camera, renderer, controls;
 let character, mixer, animations = {};
 let currentAnimation = null;
+
+// Player level for evolution system
+let playerLevel = 0;
+let playerXP = 0;
+const XP_PER_LEVEL = 10;
+
+// Evolution system
+let evolutionManager = null;
+
+// IndexedDB for persistence
+let animationDB = null;
 
 // Pet stats
 let petStats = {
@@ -21,8 +32,47 @@ let textures = {
     normal: null
 };
 
+// Initialize IndexedDB
+function initIndexedDB() {
+    const request = indexedDB.open('MySiggyDB', 2);
+    
+    request.onerror = (event) => {
+        console.error('IndexedDB error:', event.target.error);
+    };
+    
+    request.onsuccess = (event) => {
+        animationDB = event.target.result;
+        console.log('IndexedDB initialized successfully');
+    };
+    
+    request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        
+        // Create animations object store if it doesn't exist
+        if (!db.objectStoreNames.contains('animations')) {
+            db.createObjectStore('animations', { keyPath: 'name' });
+            console.log('Created animations object store');
+        }
+        
+        // Create evolutionState object store if it doesn't exist
+        if (!db.objectStoreNames.contains('evolutionState')) {
+            db.createObjectStore('evolutionState', { keyPath: 'id' });
+            console.log('Created evolutionState object store');
+        }
+        
+        // Create particleTextures object store if it doesn't exist
+        if (!db.objectStoreNames.contains('particleTextures')) {
+            db.createObjectStore('particleTextures', { keyPath: 'id' });
+            console.log('Created particleTextures object store');
+        }
+    };
+}
+
 // Initialize scene
 function init() {
+    // Initialize IndexedDB first
+    initIndexedDB();
+
     // Scene
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87CEEB);
@@ -170,16 +220,20 @@ function applyTextures(model) {
     });
 }
 
-// Load character
+// Load character with all animations from single GLB file
 function loadCharacter() {
     const gltfLoader = new GLTFLoader();
     
-    console.log('Loading GLTF model...');
+    console.log('Loading unified GLTF model with all animations...');
+    
+    // Используй свой объединенный .glb файл
+    // Если файл называется по-другому, измени путь
+    const modelPath = 'models/character-with-animations.glb'; // или .gltf
     
     gltfLoader.load(
-        'models/model.gltf',
+        modelPath,
         (gltf) => {
-            console.log('GLTF loaded successfully');
+            console.log('✅ GLTF loaded successfully');
             character = gltf.scene;
             
             // Apply textures
@@ -197,81 +251,149 @@ function loadCharacter() {
             
             scene.add(character);
             
-            // Setup animations
+            // Setup animation mixer
+            mixer = new THREE.AnimationMixer(character);
+            
+            // Load ALL animations from the GLB file
             if (gltf.animations && gltf.animations.length > 0) {
-                mixer = new THREE.AnimationMixer(character);
+                console.log(`📦 Found ${gltf.animations.length} animations in GLB file`);
+                
                 gltf.animations.forEach((clip) => {
-                    animations[clip.name] = mixer.clipAction(clip);
+                    // Создаем action для каждой анимации
+                    const action = mixer.clipAction(clip);
+                    
+                    // Сохраняем по имени (которое ты задал в Blender)
+                    animations[clip.name] = action;
+                    
+                    console.log(`  ✓ Loaded animation: ${clip.name} (${clip.duration.toFixed(2)}s)`);
                 });
+                
+                // Кэшируем анимации в IndexedDB для еще более быстрой загрузки
+                cacheAnimationsToIndexedDB(gltf.animations);
+                
+                // Создаем UI селектор для всех анимаций
+                populateAnimationSelector();
+            } else {
+                console.warn('⚠️ No animations found in GLB file');
             }
             
-            // Load additional animations
-            loadAnimations();
+            // Initialize evolution system
+            initializeEvolutionSystem();
             
+            // Hide loading screen
             document.getElementById('loading').classList.add('hidden');
+            
+            console.log('🎮 Game ready! Total animations:', Object.keys(animations).length);
         },
         (progress) => {
             const percent = (progress.loaded / progress.total * 100).toFixed(0);
+            const loadingBar = document.querySelector('.loading-bar-fill');
+            const loadingPercentage = document.querySelector('.loading-percentage');
+            
+            if (loadingBar) loadingBar.style.width = `${percent}%`;
+            if (loadingPercentage) loadingPercentage.textContent = `${percent}%`;
+            
             console.log(`Loading: ${percent}%`);
         },
         (error) => {
-            console.error('Error loading model:', error);
+            console.error('❌ Error loading model:', error);
             document.getElementById('loading').innerHTML = 
                 '<div style="color: red;">Error loading model. Check console.</div>';
         }
     );
 }
 
-// Load additional animations
-function loadAnimations() {
-    const fbxLoader = new FBXLoader();
-    const animationFiles = [
-        { name: 'walk', file: 'animations/Female Walk.fbx', label: '🚶 Walk' },
-        { name: 'dance', file: 'animations/Hip Hop Dancing.fbx', label: '💃 Dance' },
-        { name: 'jump', file: 'animations/Jump.fbx', label: '🦘 Jump' },
-        { name: 'kick', file: 'animations/kick.fbx', label: '🦵 Kick' },
-        { name: 'nervous', file: 'animations/Nervously Look Around.fbx', label: '😰 Nervous' },
-        { name: 'no_food', file: 'animations/no food.fbx', label: '😢 Hungry' },
-        { name: 'flair', file: 'animations/Flair.fbx', label: '✨ Flair' }
-    ];
-
+// Populate animation selector UI
+function populateAnimationSelector() {
     const animationSelect = document.getElementById('animation-list');
+    if (!animationSelect) return;
     
-    animationFiles.forEach(({ name, file, label }) => {
-        fbxLoader.load(
-            file,
-            (fbx) => {
-                if (fbx.animations && fbx.animations.length > 0) {
-                    const clip = fbx.animations[0];
-                    clip.name = name;
-                    
-                    if (mixer && character) {
-                        // Apply textures to FBX model
-                        applyTextures(fbx);
-                        
-                        animations[name] = mixer.clipAction(clip);
-                        
-                        // Add to selector
-                        const option = document.createElement('option');
-                        option.value = name;
-                        option.textContent = label;
-                        animationSelect.appendChild(option);
-                        
-                        console.log(`Animation ${name} loaded`);
-                    }
-                }
-            },
-            undefined,
-            (error) => {
-                console.error(`Error loading animation ${name}:`, error);
-            }
-        );
+    // Очищаем существующие опции
+    animationSelect.innerHTML = '<option value="">Select Animation</option>';
+    
+    // Маппинг имен анимаций на эмодзи (настрой под свои названия)
+    const animationLabels = {
+        // Основные действия
+        'Idle': '🧍 Idle',
+        'Walk': '🚶 Walk',
+        'Run': '🏃 Run',
+        'Jump': '🦘 Jump',
+        
+        // Эмоции
+        'Happy': '😊 Happy',
+        'Sad': '😢 Sad',
+        'Angry': '😠 Angry',
+        'Excited': '🤩 Excited',
+        'Crying': '😭 Crying',
+        'Laughing': '😂 Laughing',
+        
+        // Танцы
+        'Dance': '💃 Dance',
+        'Hip Hop Dancing': '🕺 Hip Hop',
+        'Dancing Twerk': '💃 Twerk',
+        'Dancing Maraschino Step': '🎵 Maraschino',
+        'Dancing Running Man': '🏃 Running Man',
+        'Northern Soul Dance': '🎶 Soul Dance',
+        
+        // Действия
+        'Eating': '🍔 Eating',
+        'Drinking': '🥤 Drinking',
+        'Sleeping': '😴 Sleeping',
+        'Sitting': '🪑 Sitting',
+        
+        // Боевые
+        'Punch': '👊 Punch',
+        'Kick': '🦵 Kick',
+        'Boxing': '🥊 Boxing',
+        
+        // Другие
+        'Wave': '👋 Wave',
+        'Clap': '👏 Clap',
+        'Flair': '✨ Flair'
+    };
+    
+    // Добавляем все загруженные анимации
+    Object.keys(animations).sort().forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = animationLabels[name] || `🎬 ${name}`;
+        animationSelect.appendChild(option);
     });
+    
+    console.log(`📋 Animation selector populated with ${Object.keys(animations).length} animations`);
+}
 
-    // Animation selector handler
-    animationSelect.addEventListener('change', (e) => {
-        playAnimation(e.target.value);
-    });
+// Cache animations to IndexedDB for faster subsequent loads
+async function cacheAnimationsToIndexedDB(animationClips) {
+    if (!animationDB) {
+        console.warn('IndexedDB not available for animation caching');
+        return;
+    }
+    
+    try {
+        const transaction = animationDB.transaction(['animations'], 'readwrite');
+        const store = transaction.objectStore('animations');
+        
+        for (const clip of animationClips) {
+            // Сохраняем метаданные анимации
+            const animData = {
+                name: clip.name,
+                duration: clip.duration,
+                tracks: clip.tracks.length,
+                cached: Date.now()
+            };
+            
+            await new Promise((resolve, reject) => {
+                const request = store.put(animData);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        }
+        
+        console.log('💾 Animations metadata cached to IndexedDB');
+    } catch (error) {
+        console.warn('Failed to cache animations:', error);
+    }
 }
 
 // Play animation
@@ -295,8 +417,9 @@ function playAnimation(name) {
 
 // Animation loop
 const clock = new THREE.Clock();
+let lastTimestamp = 0;
 
-function animate() {
+function animate(timestamp = 0) {
     requestAnimationFrame(animate);
 
     const delta = clock.getDelta();
@@ -305,8 +428,15 @@ function animate() {
         mixer.update(delta);
     }
 
+    // Update evolution system
+    if (evolutionManager) {
+        evolutionManager.update(timestamp, delta);
+    }
+
     controls.update();
     renderer.render(scene, camera);
+    
+    lastTimestamp = timestamp;
 }
 
 // Responsive
@@ -344,11 +474,66 @@ function updateStatsUI() {
     document.getElementById('energy-bar').style.width = petStats.energy + '%';
 }
 
+// Initialize evolution system
+async function initializeEvolutionSystem() {
+    if (!character || !scene || !animationDB) {
+        console.warn('Cannot initialize evolution system: missing dependencies');
+        return;
+    }
+
+    try {
+        evolutionManager = new EvolutionManager(scene, character, animationDB);
+        await evolutionManager.initialize();
+        console.log('Evolution system initialized');
+    } catch (error) {
+        console.error('Failed to initialize evolution system:', error);
+    }
+}
+
+// Add XP and check for level up
+function addXP(amount) {
+    playerXP += amount;
+    
+    // Check for level up
+    while (playerXP >= XP_PER_LEVEL) {
+        playerXP -= XP_PER_LEVEL;
+        playerLevel++;
+        console.log(`Level up! Now level ${playerLevel}`);
+        
+        // Update UI
+        updateLevelUI();
+        
+        // Check for evolution
+        if (evolutionManager) {
+            evolutionManager.checkEvolution(playerLevel);
+        }
+    }
+    
+    // Update XP bar
+    updateLevelUI();
+}
+
+// Update level display
+function updateLevelUI() {
+    const levelBadge = document.getElementById('level-badge');
+    const xpFill = document.getElementById('xp-fill-top');
+    
+    if (levelBadge) {
+        levelBadge.textContent = `Level ${playerLevel}`;
+    }
+    
+    if (xpFill) {
+        const xpPercent = (playerXP / XP_PER_LEVEL) * 100;
+        xpFill.style.width = `${xpPercent}%`;
+    }
+}
+
 // Export functions for HTML
 window.feedPet = async function() {
     petStats.hunger = Math.min(100, petStats.hunger + 30);
     petStats.happiness = Math.min(100, petStats.happiness + 10);
     updateStatsUI();
+    addXP(2); // Grant 2 XP for feeding
     if (animations['jump']) playAnimation('jump');
     console.log('Fed the pet!');
 };
@@ -357,6 +542,7 @@ window.playWithPet = async function() {
     petStats.happiness = Math.min(100, petStats.happiness + 30);
     petStats.energy = Math.max(0, petStats.energy - 10);
     updateStatsUI();
+    addXP(3); // Grant 3 XP for playing
     if (animations['dance']) playAnimation('dance');
     console.log('Playing with pet!');
 };
@@ -365,6 +551,7 @@ window.sleepPet = async function() {
     petStats.energy = Math.min(100, petStats.energy + 40);
     petStats.happiness = Math.min(100, petStats.happiness + 5);
     updateStatsUI();
+    addXP(1); // Grant 1 XP for sleeping
     if (animations['walk']) playAnimation('walk');
     console.log('Pet is sleeping!');
 };
@@ -373,6 +560,7 @@ window.dancePet = async function() {
     petStats.happiness = Math.min(100, petStats.happiness + 20);
     petStats.energy = Math.max(0, petStats.energy - 15);
     updateStatsUI();
+    addXP(3); // Grant 3 XP for dancing
     if (animations['flair']) playAnimation('flair');
     console.log('Pet is dancing!');
 };
@@ -382,6 +570,9 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
     console.log('Connecting to wallet...');
     alert('Web3 wallet connection (in development)');
 });
+
+// Export for evolution system
+export { animationDB, playerLevel };
 
 // Start game
 init();

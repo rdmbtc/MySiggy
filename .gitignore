@@ -10,3 +10,5 @@ build/
 cache/
 artifacts/
 typechain-types/
+.vscode/
+.kiro/
