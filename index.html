@@ -2014,8 +2014,8 @@
             }
         ];
         
-        // Interactive animations
-        const interactiveAnims = ['boxing', 'boxing_1', 'hit_to_body_1', 'hit_to_body', 'kip_up'];
+        // Interactive animations - используем названия из GLB (lowercase, underscores)
+        const interactiveAnims = ['boxing', 'boxing_1', 'hit_to_body', 'hit_to_body_1', 'kip_up', 'excited', 'angry', 'surprised', 'laughing'];
         let lastInteractionTime = 0;
 
         // NOTE: Animation lists below are no longer used - all animations now loaded from GLB file
@@ -2192,15 +2192,35 @@
             // Create hitbox when character is loaded
             window.createCharacterHitbox = function() {
                 if (character && !hitbox) {
-                    // Create a larger invisible box around the character
-                    const hitboxGeometry = new THREE.BoxGeometry(120, 200, 80);
+                    // Calculate bounding box of character
+                    const box = new THREE.Box3().setFromObject(character);
+                    const size = box.getSize(new THREE.Vector3());
+                    const center = box.getCenter(new THREE.Vector3());
+                    
+                    // Create a MUCH larger hitbox - especially height
+                    const hitboxWidth = size.x * 2.5;
+                    const hitboxHeight = size.y * 8;
+                    const hitboxDepth = size.z * 2.5;
+                    
+                    const hitboxGeometry = new THREE.BoxGeometry(
+                        hitboxWidth, 
+                        hitboxHeight, 
+                        hitboxDepth
+                    );
                     const hitboxMaterial = new THREE.MeshBasicMaterial({
                         transparent: true,
                         opacity: 0,
                         visible: false
                     });
                     hitbox = new THREE.Mesh(hitboxGeometry, hitboxMaterial);
-                    hitbox.position.set(0, 100, 0); // Center at character's middle
+                    
+                    // Position hitbox higher - at the visual center of character
+                    hitbox.position.set(
+                        center.x,
+                        box.min.y + (hitboxHeight / 2),
+                        center.z
+                    );
+                    
                     scene.add(hitbox);
                 }
             };
@@ -2414,11 +2434,9 @@
             totalAnimationsToLoad = glbAnimations.length;
             loadedAnimationsCount = 0;
             
-            // Process all animations from GLB - используем как есть
+            // Process all animations from GLB
             glbAnimations.forEach((clip, index) => {
                 const glbName = clip.name.toLowerCase().replace(/\s+/g, '_').replace(/[(),]/g, '');
-                
-                // Используем GLB имена напрямую (они уже правильные из FBX файлов)
                 const finalName = glbName;
                 
                 const action = mixer.clipAction(clip);
