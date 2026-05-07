@@ -2142,6 +2142,9 @@
             const raycaster = new THREE.Raycaster();
             const mouse = new THREE.Vector2();
             
+            // Create invisible hitbox for better interaction
+            let hitbox = null;
+            
             // Throttle raycasting for performance
             let canInteract = true;
             
@@ -2160,9 +2163,9 @@
                 // Update the picking ray with the camera and mouse position
                 raycaster.setFromCamera(mouse, camera);
                 
-                // Check if character is clicked
-                if (character) {
-                    const intersects = raycaster.intersectObject(character, true);
+                // Check if character hitbox is clicked
+                if (hitbox) {
+                    const intersects = raycaster.intersectObject(hitbox, false);
                     
                     if (intersects.length > 0) {
                         // Throttle interactions (max once per 2 seconds)
@@ -2185,6 +2188,22 @@
                     }
                 }
             }
+            
+            // Create hitbox when character is loaded
+            window.createCharacterHitbox = function() {
+                if (character && !hitbox) {
+                    // Create a larger invisible box around the character
+                    const hitboxGeometry = new THREE.BoxGeometry(120, 200, 80);
+                    const hitboxMaterial = new THREE.MeshBasicMaterial({
+                        transparent: true,
+                        opacity: 0,
+                        visible: false
+                    });
+                    hitbox = new THREE.Mesh(hitboxGeometry, hitboxMaterial);
+                    hitbox.position.set(0, 100, 0); // Center at character's middle
+                    scene.add(hitbox);
+                }
+            };
             
             // Add event listeners for both mouse and touch
             renderer.domElement.addEventListener('pointerdown', onPointerDown, { passive: true });
@@ -2354,6 +2373,11 @@
                 window.debugCharacter = character;
               
                 characterReady = true;
+                
+                // Create hitbox for interaction
+                if (window.createCharacterHitbox) {
+                    window.createCharacterHitbox();
+                }
                 
                 // НЕ применяем текстуры - используем те что в GLB!
                 // if (textureReady) applyTexture();
